@@ -13,7 +13,7 @@ class LM(nn.Module):
 
         self.config = model_config
 
-        self.embedding = nn.Embedding(vocab_size, self.config.d_model)
+        self.embedding = nn.Embedding(vocab_size, self.config.d_model, padding_idx=0)
         
         if isinstance(self.config, TransformerConfig):
             self.core = Transformer(self.config)

@@ -34,7 +34,7 @@ class Transformer(nn.Module):
 
         _, T, _ = X.size()
 
-        X = X + self.PE[:T]
+        #X = X + self.PE[:T]
 
         for layer in self.layers:
             X = layer(X) # (B, L, d_model)
