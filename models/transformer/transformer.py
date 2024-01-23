@@ -47,7 +47,7 @@ class DecoderLayer(nn.Module):
 
         self.config = config
 
-        self.sa = SelfAttentionMultiHead(config.d_model, config.n_heads)
+        self.sa = SelfAttentionMultiHead(config)
         self.l1 = nn.LayerNorm(config.d_model)
         self.fc1 = nn.Linear(config.d_model, 4*config.d_model)
         self.act = F.selu # F.gelu # selu used in GPT-2/3, gelu is new

@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from transformer.transformer import Transformer, TransformerConfig
-from mamba.mamba import Mamba, MambaConfig
+from models.transformer.transformer import Transformer, TransformerConfig
+from models.mamba.mamba import Mamba, MambaConfig
 
 class LM(nn.Module):
     def __init__(self, model_config: Union[TransformerConfig, MambaConfig], vocab_size: int):
@@ -23,7 +23,7 @@ class LM(nn.Module):
         self.lm_head = nn.Linear(self.config.d_model, vocab_size, bias=False)
         self.lm_head.weight = self.embedding.weight
 
-    def forward(self, tokens, targets=None):
+    def forward(self, tokens):
         # tokens : (B, L)
 
         # logits : (B, L, vocab_size)
@@ -33,4 +33,3 @@ class LM(nn.Module):
         logits = self.lm_head(x)
 
         return logits
-
