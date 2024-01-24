@@ -1,3 +1,8 @@
+"""
+This script provides the data for the training script.
+It is supposed that you have already run prepare_data.py, which converts the original Othello dataset to .bin files, usable by this script.
+"""
+
 import os
 
 import random
@@ -7,7 +12,7 @@ import torch
 class OthelloDataset(torch.utils.data.IterableDataset):
     def __init__(self, dir: str = "data/train"):
         # dir contains the .bin files created by prepare_data.py
-        # each files contains some numbers (around 100K) of tokenized games
+        # each files contains some numbers (around 100K) of tokenized games, each of len 60
         super().__init__()
 
         self.dir = dir
@@ -37,7 +42,8 @@ class OthelloDataset(torch.utils.data.IterableDataset):
                     start = indice
                     end = start + 60
                     
-                    data = torch.from_numpy(chunk[start:end].copy())
+                    # as the tokenized move are from -1 to 63, we feed to the model 0 to 64 (index -1 should not by used with nn.Embedding)
+                    data = torch.from_numpy(chunk[start:end].copy()) + 1
                     x = data[:-1]
                     y = data[1:]
 

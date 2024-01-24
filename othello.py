@@ -1,8 +1,5 @@
-
 """
-
-adapted, simplified from https://github.com/likenneth/othello_world/blob/master/data/othello.py
-
+adapted and simplified from https://github.com/likenneth/othello_world/blob/master/data/othello.py
 """
 
 import numpy as np
