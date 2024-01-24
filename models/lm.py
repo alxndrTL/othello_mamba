@@ -34,6 +34,8 @@ class LM(nn.Module):
     def forward(self, tokens):
         # tokens : (B, L)
 
+        torch.bfloat16
+
         # logits : (B, L, vocab_size)
 
         x = self.embedding(tokens)

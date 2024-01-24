@@ -15,6 +15,8 @@ class TransformerConfig:
     bias: bool = False
     norm_eps: float = 1e-5
 
+    flash: bool = True
+
     def __post_init__(self):
         assert self.d_model % self.n_heads == 0, "d_model must be a multiple of n_heads"
 
@@ -46,7 +48,7 @@ class Transformer(nn.Module):
         return X
     
 class DecoderLayer(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: TransformerConfig):
         super().__init__()
 
         self.config = config
@@ -67,7 +69,7 @@ class DecoderLayer(nn.Module):
         return X
     
 class MLP(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: TransformerConfig):
         super().__init__()
 
         self.fc_1 = nn.Linear(config.d_model, 4 * config.d_model, bias=config.bias)
@@ -78,9 +80,8 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.dropout(self.fc_2(F.silu(self.fc_1(x)) * self.fc_3(x)))
 
-
 class SelfAttentionMultiHead(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config: TransformerConfig):
         super().__init__()
 
         self.config = config
@@ -89,6 +90,13 @@ class SelfAttentionMultiHead(nn.Module):
         self.query_proj = nn.Linear(config.d_model, config.d_model, bias=False) # d_query = n_heads*d_head as in the Transformer paper
         self.key_proj = nn.Linear(config.d_model, config.d_model, bias=False)
         self.value_proj = nn.Linear(config.d_model, config.d_model, bias=False)
+
+        if not config.flash:
+            # compute the mask once and for all here 
+            # registrer treats it like a parameter (device, state_dict...) without training
+            mask = torch.full((1, 1, config.max_len, config.max_len), float('-inf'))
+            mask = torch.triu(mask, diagonal=1)
+            self.register_buffer('mask', mask)
 
         # output projection
         self.c_proj = nn.Linear(config.d_model, config.d_model, bias=config.bias)
@@ -106,13 +114,14 @@ class SelfAttentionMultiHead(nn.Module):
         K = self.key_proj(X).view(B, L, self.config.n_heads, self.config.d_head).transpose(1, 2) # (B, n_heads, L, d_key)
         V = self.value_proj(X).view(B, L, self.config.n_heads, self.config.d_head).transpose(1, 2) # (B, n_heads, L, d_head=d_value)
 
-        QK_T = Q @ torch.transpose(K, 2, 3) # (B, n_heads, L, L)
+        if self.config.flash:
+            attention = F.scaled_dot_product_attention(Q, K, V, attn_mask=None, dropout_p=self.config.dropout if self.training else 0, is_causal=True)
+        else:
+            QK_T = Q @ torch.transpose(K, 2, 3) # (B, n_heads, L, L)
+            QK_T = QK_T + self.mask[:, :, :L, :L]
 
-        mask = torch.tril(torch.ones((L, L), dtype=torch.int32)).bool()
-        QK_T[:, :, ~mask] = -float("inf")
-
-        attention_scores = torch.softmax(QK_T / math.sqrt(self.config.d_head), dim=3) # (B, n_heafs, L, L)
-        attention = self.attn_drop(attention_scores) @ V # (B, n_h, L, d_value=d_head)
+            attention_scores = torch.softmax(QK_T / math.sqrt(self.config.d_head), dim=3) # (B, n_heafs, L, L)
+            attention = self.attn_drop(attention_scores) @ V # (B, n_h, L, d_value=d_head)
 
         attention = attention.transpose(1, 2) # (B, L, n_heafs, d_head)
         y = attention.contiguous().view(B, L, self.config.d_model) # n_heads * d_head = d_model
