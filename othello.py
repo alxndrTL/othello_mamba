@@ -84,7 +84,7 @@ class OthelloGame():
 
     def play_move(self, move):
         """
-        play a move
+        play a move, update state
         """
 
         r, c = move // 8, move % 8
@@ -179,7 +179,8 @@ class OthelloGame():
 
         print("-" * 20)
 
-        print([move_to_str(move) for move in self.history])
+        #print([move_to_str(move) for move in self.history])
+        print([move for move in self.history])
 
         a = "abcdefgh"
         for k, row in enumerate(self.state.tolist()):
