@@ -8,6 +8,8 @@ import torch.nn.functional as F
 from models.transformer.transformer import Transformer, TransformerConfig, RMSNorm
 from models.mamba.mamba import Mamba, MambaConfig
 
+# todo : inference function, with no grad, with kv cache for transformer, step() for mamba
+
 class LM(nn.Module):
     def __init__(self, model_config: Union[TransformerConfig, MambaConfig], vocab_size: int):
         super().__init__()
