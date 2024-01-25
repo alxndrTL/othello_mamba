@@ -6,5 +6,4 @@ data/
 **/*.pickle
 **/*.bin
 **/*.pth
-
 othello_training.ipynb
