@@ -1,4 +1,8 @@
 __pycache__/
+wandb/
+runs/
+pickles/
+data/
 **/*.pickle
 **/*.bin
 **/*.pth

@@ -44,7 +44,7 @@ class OthelloDataset(torch.utils.data.IterableDataset):
                     
                     # as the tokenized move are from -1 to 63, we feed to the model 0 to 64 (index -1 should not by used with nn.Embedding)
                     data = torch.from_numpy(chunk[start:end].copy()) + 1
-                    x = data[:-1]
-                    y = data[1:]
+                    x = data[:-1].int()
+                    y = data[1:].long()
 
                     yield x, y
