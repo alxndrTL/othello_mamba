@@ -27,29 +27,30 @@ import wandb
 
 from models.lm import LM
 from models.transformer.transformer import TransformerConfig
+from models.mamba.mamba import MambaConfig
 from data import OthelloDataset
 from eval import eval
 
 # -------------------------------------------------------
 
-log_wandb = True
+log_wandb = False
 
 d_model = 512
 n_layers = 8
 n_heads = 8
 
-batch_size = 256
+batch_size = 16
 
-num_iters = 20000 # 1000 = 1 min
+num_iters = 500 # 1000 = 1 min
 train_log_interval = 50
-eval_acc_interval = 500
+eval_acc_interval = 1000
 eval_val_interval = 200
 eval_iters = 50
 
 lr = 1e-3
 lr_min = 1e-5 # as in Mamba paper
 lr_warmup_iters = 100
-lr_decay_iters = 20000 # num_iters as in Chinchilla
+lr_decay_iters = 10000 # num_iters as in Chinchilla
 
 dropout = 0.
 bias = False
@@ -60,13 +61,13 @@ adam_b2 = 0.95
 clip_value_grad = 1.0
 weight_decay = 0.1
 
-use_torch_compile = True
+use_torch_compile = False
 use_flash_attention = True
 
 device = "cuda" # cpu, cuda:0, cuda:1, ...
-dtype = "bfloat16" # float32, float16 or bfloat16 (float16 will use a GradScaler)
+dtype = "float32" # float32, float16 or bfloat16 (float16 will use a GradScaler)
 
-load_checkpoint = True
+load_checkpoint = False
 checkpoint_load_dir = "runs/sleek-water-17.pth" # where to load from (if load_checkpoint)
 
 data_dir = "data/"
@@ -137,7 +138,8 @@ ds_val = OthelloDataset(val_dir)
 loader_val = torch.utils.data.DataLoader(ds_val, batch_size=batch_size, num_workers=0, pin_memory=True) # todo : bs de 1 ici, quand on l'augmentera attention a eval.py
 iter_val = iter(loader_val)
 
-config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
+#config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
+config = MambaConfig(d_model=d_model, n_layers=n_layers)
 model = LM(config, vocab_size=65).to(device)
 optim = torch.optim.AdamW(model.parameters(), lr=lr, betas=(adam_b1, adam_b2), weight_decay=weight_decay)
 scaler = torch.cuda.amp.GradScaler(enabled=(dtype=="float16"))
@@ -180,8 +182,7 @@ for iter, data in enumerate(loader):
     optim.zero_grad(set_to_none=True)
 
     # lr decay
-    #lr_iter = get_lr(iter)
-    lr_iter = 1e-5
+    lr_iter = get_lr(iter)
     for param_group in optim.param_groups:
         param_group['lr'] = lr_iter
 
@@ -249,7 +250,7 @@ print(f"Final accuracy: {100.*final_acc:.2f}%")
 
 # final log
 num_params = sum([p.numel() for p in model.parameters()])
-num_tokens_processed = num_iters * batch_size * model.config.max_len
+num_tokens_processed = num_iters * batch_size * 60
 
 to_log = {"final_accuracy": final_acc,
           "num_params": num_params,

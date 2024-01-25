@@ -42,6 +42,8 @@ class MambaConfig:
     dt_scale: float = 1.0
     dt_init_floor = 1e-4
 
+    norm_eps: float = 1e-5
+
     bias: bool = False
     conv_bias: bool = True
 
