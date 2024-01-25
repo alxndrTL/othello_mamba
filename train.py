@@ -6,6 +6,10 @@ todo :
 -multiple gpus (DDP)
 
 -flops util (in final log)
+-weight decay different pour certains params
+
+-SAVE THE UNCOMPILED MODEL
+-save for HF (model_export dans llama2.c/train.py ????)
 
 """
 
@@ -24,26 +28,28 @@ import wandb
 from models.lm import LM
 from models.transformer.transformer import TransformerConfig
 from data import OthelloDataset
+from eval import eval
 
 # -------------------------------------------------------
 
-log_wandb = False
+log_wandb = True
 
 d_model = 512
 n_layers = 8
 n_heads = 8
 
-batch_size = 1
+batch_size = 256
 
-num_iters = 500
+num_iters = 20000 # 1000 = 1 min
 train_log_interval = 50
-eval_interval = 200
+eval_acc_interval = 500
+eval_val_interval = 200
 eval_iters = 50
 
-lr = 5e-4
+lr = 1e-3
 lr_min = 1e-5 # as in Mamba paper
 lr_warmup_iters = 100
-lr_decay_iters = 10000 # num_iters as in Chinchilla
+lr_decay_iters = 20000 # num_iters as in Chinchilla
 
 dropout = 0.
 bias = False
@@ -54,20 +60,22 @@ adam_b2 = 0.95
 clip_value_grad = 1.0
 weight_decay = 0.1
 
-use_torch_compile = False
+use_torch_compile = True
 use_flash_attention = True
 
 device = "cuda" # cpu, cuda:0, cuda:1, ...
-dtype = "float16" # float32, float16 or bfloat16 (float16 will use a GradScaler)
+dtype = "bfloat16" # float32, float16 or bfloat16 (float16 will use a GradScaler)
 
-load_checkpoint = False
-checkpoint_load_dir = "ckpt.pth" # where to load from (if load_checkpoint)
+load_checkpoint = True
+checkpoint_load_dir = "runs/sleek-water-17.pth" # where to load from (if load_checkpoint)
 
 data_dir = "data/"
 save_dir = "runs/" # where to save to
 
 # -------------------------------------------------------
 
+torch.backends.cuda.matmul.allow_tf32 = True # allow tf32 on matmul
+torch.backends.cudnn.allow_tf32 = True # allow tf32 on cudnn
 device_type = "cuda" if "cuda" in device else "cpu"
 torch_dtype = {"float32": torch.float32, "float16": torch.float16, "bfloat16": torch.bfloat16}[dtype]
 dtype_ctx = (nullcontext() if device_type == "cpu" else torch.amp.autocast(device_type, torch_dtype))
@@ -96,7 +104,7 @@ if log_wandb:
 if log_wandb:
     run_name = wandb.run.name
 else:
-    run_name = ''.join(random.choice(string.ascii_letters) for i in range(8))
+    run_name = ''.join(random.choice(string.ascii_letters) for _ in range(8))
 
 save_dir = os.path.join(save_dir, run_name + '.pth')
 
@@ -126,7 +134,7 @@ ds = OthelloDataset(train_dir)
 loader = torch.utils.data.DataLoader(ds, batch_size=batch_size, num_workers=0, pin_memory=True)
 
 ds_val = OthelloDataset(val_dir)
-loader_val = torch.utils.data.DataLoader(ds_val, batch_size=1, num_workers=0, pin_memory=True) # todo : bs de 1 ici, quand on l'augmentera attention a eval.py
+loader_val = torch.utils.data.DataLoader(ds_val, batch_size=batch_size, num_workers=0, pin_memory=True) # todo : bs de 1 ici, quand on l'augmentera attention a eval.py
 iter_val = iter(loader_val)
 
 config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
@@ -136,6 +144,7 @@ scaler = torch.cuda.amp.GradScaler(enabled=(dtype=="float16"))
 
 print(f"Model initialized. Number of parameters : {sum([p.numel() for p in model.parameters()])}.")
 
+unoptimized_model = model
 if use_torch_compile:
     print("Compiling the model...")
     model = torch.compile(model)
@@ -150,7 +159,6 @@ if load_checkpoint:
     print(f"Successfully loaded checkpoint from {checkpoint_load_dir}.")
 
 print("Training is starting.")
-
 start_time = time.time()
 
 for iter, data in enumerate(loader):
@@ -172,7 +180,8 @@ for iter, data in enumerate(loader):
     optim.zero_grad(set_to_none=True)
 
     # lr decay
-    lr_iter = get_lr(iter)
+    #lr_iter = get_lr(iter)
+    lr_iter = 1e-5
     for param_group in optim.param_groups:
         param_group['lr'] = lr_iter
 
@@ -181,7 +190,7 @@ for iter, data in enumerate(loader):
     if iter % train_log_interval == 0:
         to_log.update({"train_loss": loss.item()})
 
-    if iter % eval_interval == 0:
+    if iter % eval_val_interval == 0:
         with torch.no_grad():
             model.eval()
             eval_loss = 0
@@ -199,8 +208,13 @@ for iter, data in enumerate(loader):
             model.train()
         
         to_log.update({"val_loss": eval_loss})
-
-        # todo : accuracy ?
+    
+    if iter % eval_acc_interval == 0:
+        with torch.no_grad():
+            model.eval()
+            acc = eval(unoptimized_model, device, 10, loader_val) # evaluate on 10 games
+            model.train()
+        to_log.update({"accuracy": acc})
 
     if to_log:
         to_log.update({"lr": lr_iter})
@@ -209,7 +223,7 @@ for iter, data in enumerate(loader):
         if "val_loss" in to_log:
             num_digits = len(str(num_iters))
             formatted_iter = f"{iter:0{num_digits}d}"
-            print(f"Step {formatted_iter}/{num_iters}. train loss : {loss.item():.3f}. lr : {lr_iter:.5f}. uptime : {(time.time()-start_time)/60:.2f} minutes. valid loss : {eval_loss:.3f}.")
+            print(f"Step {formatted_iter}/{num_iters}. train loss : {loss.item():.3f}. valid loss : {eval_loss:.3f}. lr : {lr_iter:.5f}. uptime : {(time.time()-start_time)/60:.2f} minutes.")
 
         # logging
         if log_wandb:
@@ -219,7 +233,6 @@ for iter, data in enumerate(loader):
         break
 
 end_time = time.time()
-
 print(f"Training is done. Took {(end_time-start_time)/60:.2f} minutes.")
 
 checkpoint = {"model": model.state_dict(),
@@ -229,14 +242,17 @@ torch.save(checkpoint, save_dir)
 
 print(f"Successfully saved checkpoint in {save_dir}.")
 
-from eval import eval
-print(eval(model, 50, loader_val))
+model.eval()
+final_acc = eval(unoptimized_model, device, 50, loader_val)
+model.train()
+print(f"Final accuracy: {100.*final_acc:.2f}%")
 
 # final log
 num_params = sum([p.numel() for p in model.parameters()])
 num_tokens_processed = num_iters * batch_size * model.config.max_len
 
-to_log = {"num_params": num_params,
+to_log = {"final_accuracy": final_acc,
+          "num_params": num_params,
           "tokens_per_s": int(num_tokens_processed/(end_time-start_time)),
           "iter_per_s": int(num_iters/(end_time-start_time)),
           "use_torch_compile": use_torch_compile,

@@ -1,0 +1,5 @@
+pip install wandb
+wandb login
+(API : bee53ffaa82057291e3c415cea5d2b064e4a80a8)
+wget -O data.tar.xz https://huggingface.co/datasets/alexandretl/othello/resolve/main/data.tar.xz?download=true
+tar -xf data.tar.xz

@@ -12,7 +12,7 @@ from data import OthelloDataset
 
 # todo : use LM inference function (and not forward)
 
-def eval(model: nn.Module, n_games: int, data_loader: torch.utils.data.DataLoader = None, dir: str = "data/val"):
+def eval(model: nn.Module, device, n_games: int, data_loader: torch.utils.data.DataLoader = None, dir: str = "data/val"):
     """
     Returns the percentage of moves predicted by model which are legal.
     Uses data from data_loader if provided, else fallbacks to dir.
@@ -31,7 +31,8 @@ def eval(model: nn.Module, n_games: int, data_loader: torch.utils.data.DataLoade
 
     for i, data in enumerate(data_loader):
         game_transcript, _ = data # (1, lengame)
-        game_transcript = game_transcript.squeeze().int().to(next(model.parameters()).device) # if sent to model : +1 then -1 after the pass
+        game_transcript = game_transcript[[0]] # (1, lengame)
+        game_transcript = game_transcript.squeeze().int().to(device) # if sent to model : +1 then -1 after the pass
 
         game_len = game_transcript.shape[0] # always 60-1=59 (padded)
         game = OthelloGame()
@@ -48,7 +49,8 @@ def eval(model: nn.Module, n_games: int, data_loader: torch.utils.data.DataLoade
             x = context[None, ...] # (1, pgame_len)
             logits = model(x)[:, -1, :] # (1, vocab_size)
             probs = F.softmax(logits, dim=-1) # (1, vocab_size)
-            move = torch.multinomial(probs, num_samples=1).item() - 1
+            #move = torch.multinomial(probs, num_samples=1).item() - 1
+            move = torch.argmax(probs, dim=-1).item() - 1
 
             if move in legal_moves:
                 total_legal_moves += 1
