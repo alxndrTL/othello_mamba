@@ -1,10 +1,12 @@
 """
 main training script.
 
-todo : 
+not implemented
 -gradient acc
 -multiple gpus (DDP)
+-checkpoint saving during training
 
+todo : 
 -flops util (in final log)
 -weight decay different pour certains params
 
@@ -105,7 +107,7 @@ if log_wandb:
                 "clip_value_grad": clip_value_grad,
                 "weight_decay": weight_decay,
             })
-    
+
 if log_wandb:
     run_name = wandb.run.name
 else:
@@ -139,7 +141,7 @@ ds = OthelloDataset(train_dir)
 loader = torch.utils.data.DataLoader(ds, batch_size=batch_size, num_workers=0, pin_memory=True)
 
 ds_val = OthelloDataset(val_dir)
-loader_val = torch.utils.data.DataLoader(ds_val, batch_size=batch_size, num_workers=0, pin_memory=True) # todo : bs de 1 ici, quand on l'augmentera attention a eval.py
+loader_val = torch.utils.data.DataLoader(ds_val, batch_size=batch_size, num_workers=0, pin_memory=True)
 iter_val = iter(loader_val)
 
 #config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
@@ -157,7 +159,7 @@ if use_torch_compile:
     print("Done compiling.")
 
 if load_checkpoint:
-    checkpoint = torch.load(checkpoint_load_dir, map_location=lambda storage, loc: storage.cuda(device))
+    checkpoint = torch.load(checkpoint_load_dir, map_location=device)
     model.load_state_dict(checkpoint['model'])
     optim.load_state_dict(checkpoint['optimizer'])
     scaler.load_state_dict(checkpoint['scaler'])

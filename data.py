@@ -13,6 +13,9 @@ class OthelloDataset(torch.utils.data.IterableDataset):
     def __init__(self, dir: str = "data/train", seed: int = None):
         # dir contains the .bin files created by prepare_data.py
         # each files contains some numbers (around 100K) of tokenized games, each of len 60
+
+        # seed is used by create_data_probing.py to get the same batches when collecting activations and boards
+
         super().__init__()
 
         self.dir = dir
@@ -53,3 +56,32 @@ class OthelloDataset(torch.utils.data.IterableDataset):
                     y = data[1:].long()
 
                     yield x, y
+
+class ProbingDataset(torch.utils.data.IterableDataset):
+    def __init__(self, dir_activations: str = "data_probing/layer_7/", dir_boards: str = "data_probing/"):
+        super().__init__()
+
+        self.dir_activations = dir_activations
+        self.dir_boards = dir_boards
+
+    def __iter__(self):
+
+        files_activations = sorted([os.path.join(self.dir_activations, file) for file in os.listdir(self.dir_activations) if file.endswith('.npy')])
+        files_boards = sorted([os.path.join(self.dir_boards, file) for file in os.listdir(self.dir_boards) if file.endswith('.npy')])
+
+        files_indices = list(range(len(files_activations)))
+        rng = random.Random()
+        rng.shuffle(files_indices)
+
+        while True:
+            for index in files_indices:
+                activations = np.load(files_activations[index]) # (B, 59, d_model)
+                boards = np.load(files_boards[index]) # (B, 59, 8*8)
+
+                activations = activations.reshape(-1, activations.shape[2]) # (B*59, d_model)
+                boards = boards.reshape(-1, boards.shape[2]) # (B*59, 8*8)
+
+                sample_indices = list(range(activations.shape[0]))
+                rng.shuffle(sample_indices)
+                for sample_index in sample_indices:
+                    yield activations[sample_index], boards[sample_index]
