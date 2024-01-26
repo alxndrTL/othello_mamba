@@ -36,8 +36,6 @@ class LM(nn.Module):
     def forward(self, tokens):
         # tokens : (B, L)
 
-        torch.bfloat16
-
         # logits : (B, L, vocab_size)
 
         x = self.embedding(tokens)
@@ -46,6 +44,17 @@ class LM(nn.Module):
         logits = self.lm_head(x)
 
         return logits
+    
+    def forward_up_to(self, tokens, layer):
+        # tokens : (B, L)
+        # layer (1->n_layers): will stop the forward pass just after this layer
+
+        # x : (B, L, D) activations after {layer}
+
+        x = self.embedding(tokens)
+        x = self.core(x, stop_at_layer=layer)
+
+        return x
     
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):

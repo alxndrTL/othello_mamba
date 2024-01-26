@@ -32,8 +32,9 @@ class Transformer(nn.Module):
         self.in_dropout = nn.Dropout(config.dropout)
         self.layers = nn.ModuleList([DecoderLayer(config) for _ in range(config.n_layers)])
 
-    def forward(self, X):
+    def forward(self, X, stop_at_layer: int = None):
         # X : (B, L, D)
+        # stop_at_layer (1 -> n_layers) : if set, will return the activations after the {layer}-th layer
 
         # Y : (B, L, D)
 
@@ -42,9 +43,12 @@ class Transformer(nn.Module):
         pos_emb = self.PE(torch.arange(0, T, dtype=torch.long, device=X.device))
         X = self.in_dropout(X + pos_emb)
 
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
             X = layer(X) # (B, L, d_model)
 
+            if stop_at_layer == i+1:
+                return X
+        
         return X
     
 class DecoderLayer(nn.Module):

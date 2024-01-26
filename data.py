@@ -10,12 +10,13 @@ import numpy as np
 import torch
 
 class OthelloDataset(torch.utils.data.IterableDataset):
-    def __init__(self, dir: str = "data/train"):
+    def __init__(self, dir: str = "data/train", seed: int = None):
         # dir contains the .bin files created by prepare_data.py
         # each files contains some numbers (around 100K) of tokenized games, each of len 60
         super().__init__()
 
         self.dir = dir
+        self.seed = seed
 
     def __iter__(self):
         # executed by each worker, when data are requested
@@ -26,8 +27,12 @@ class OthelloDataset(torch.utils.data.IterableDataset):
         worker_info = torch.utils.data.get_worker_info()
         worker_id = worker_info.id if worker_info is not None else 0
 
-        seed = 123456 + worker_id
-        rng = random.Random(seed)
+        rng = random.Random(123456 + worker_id)
+
+        if self.seed:
+            rng_numpy = np.random.default_rng(self.seed)
+        else:
+            rng_numpy = np.random.default_rng()
 
         while True:
             rng.shuffle(chunks_files)
@@ -36,7 +41,7 @@ class OthelloDataset(torch.utils.data.IterableDataset):
                 num_games = chunk.shape[0] // 60
 
                 game_start_indices = 60 * np.arange(num_games)
-                np.random.shuffle(game_start_indices)
+                rng_numpy.shuffle(game_start_indices)
 
                 for indice in game_start_indices:
                     start = indice

@@ -11,6 +11,8 @@ todo :
 -SAVE THE UNCOMPILED MODEL
 -save for HF (model_export dans llama2.c/train.py ????)
 
+-mamba en float32 : attention ! justement, garder les .float() ? regarder le code officiel
+
 """
 
 import os
