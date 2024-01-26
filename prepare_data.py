@@ -1,6 +1,6 @@
 """
 Convert all the pickles files (from the original Othello dataset) in {pickles_dir} and put them in {data_dir} :
-- pad all the games to length 60 (with -1s)
+- pad all the games to length 60 (with -1's)
 - ready to open with np.memmap() as np.int8
 
 A .bin file will thus be a 60*N vector (N is approx 100K, the number of games per file).

@@ -3,6 +3,8 @@ Evaluate an OthelloGPT or MambaGPT on the legality of its moves.
 It uses games sampled from {data_dir]/val. At each step of the game, the legality of the move predicted by the model is evaluated.
 """
 
+# todo : DONT USE THE VAL DATA !!!! JUST CREATE NEW GAMES
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,13 +13,15 @@ from othello import OthelloGame
 from data import OthelloDataset
 
 # todo : use LM inference function (and not forward)
+# todo : [[0]] puis squeeze() juste derriere...
+# todo : le .int() n'est plus nécessaire non ?
 
 def eval(model: nn.Module, device, n_games: int, data_loader: torch.utils.data.DataLoader = None, dir: str = "data/val"):
     """
     Returns the percentage of moves predicted by model which are legal.
     Uses data from data_loader if provided, else fallbacks to dir.
 
-    The -1s you see here are because the original tokenized moves are from -1 to 63 (-1 being the padding).
+    The -1's you see here are because the original tokenized moves are from -1 to 63 (-1 being the padding).
     We actually offset them by +1 (in data.py) because we can't feed -1 to an nn.Embedding.
     Hence, when communicating with our OthelloGame, we need to go back to the -1 to 63 range.
     """
@@ -45,7 +49,7 @@ def eval(model: nn.Module, device, n_games: int, data_loader: torch.utils.data.D
             if legal_moves == []:
                 break
             
-            # sample a move
+            # sample (or argmax) a move
             x = context[None, ...] # (1, pgame_len)
             logits = model(x)[:, -1, :] # (1, vocab_size)
             probs = F.softmax(logits, dim=-1) # (1, vocab_size)

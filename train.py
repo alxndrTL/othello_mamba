@@ -13,6 +13,8 @@ todo :
 
 -mamba en float32 : attention ! justement, garder les .float() ? regarder le code officiel
 
+-save config as well, and load from it. (will also be used by downstream scripts like eval.py and data_probing.py etcetc)
+
 """
 
 import os

@@ -7,4 +7,5 @@ data/
 **/*.bin
 **/*.pth
 **/*.tar.xz
+**/*.npy
 othello_training.ipynb
