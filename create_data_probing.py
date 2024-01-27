@@ -11,8 +11,8 @@ from models.lm import LM
 
 # -------------------------------------------------------
 
-total_games = 1000
-batch_size = 128 # each file will contain batch_size games
+total_games = 10000
+batch_size = 256 # each file will contain batch_size games
 layer = 7
 load_dir = "runs/jumping-plant-20.pth"
 save_dir = "data_probing/"
@@ -89,7 +89,6 @@ for i, data in enumerate(loader_val):
         for t in range(0, 59):
             move = game_transcript[t].item() - 1
             if move == -1:
-                print("ee")
                 # move is -1 when we encounter a game that was padded (ended before the whole board is complete with pieces)
                 # we put -100 for all pieces (it will be the ignore_index of the CE loss in the next training step)
                 boards[k, t] = -100 * np.ones((8*8,), dtype=np.int32)
@@ -122,7 +121,4 @@ for i, data in enumerate(loader_val):
 
 print(f"Done creating and saving the boards dataset.")
 
-# TODO : training sur [5:-4] !!!! à gérer dans data.py
-
-# points clef à garder en tête si ça foire :
-# 1 et 2 (modif board pour bien avoir une probe lineaire)
+# TODO : multiple layers at once

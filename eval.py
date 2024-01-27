@@ -65,7 +65,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--model_dir", type=str, help="path/to/model.pth")
-    parser.add_argument("--device", type=str, default="cuda", help="cpuor cuda")
+    parser.add_argument("--device", type=str, default="cuda", help="cpu or cuda")
     parser.add_argument("--n_games", type=int, default=50, help="number of games to play to evaluate acc")
     parser.add_argument("--sample", type=bool, default=False, help="whether to sample or simply take the most probable move")
 
