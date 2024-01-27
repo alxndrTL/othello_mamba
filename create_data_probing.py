@@ -1,4 +1,5 @@
 import os
+import json
 
 import math
 import numpy as np
@@ -7,6 +8,7 @@ import torch
 from data import OthelloDataset
 from othello import OthelloGame
 from models.transformer.transformer import TransformerConfig
+from models.mamba.mamba import MambaConfig
 from models.lm import LM
 
 # -------------------------------------------------------
@@ -14,29 +16,38 @@ from models.lm import LM
 total_games = 10000
 batch_size = 256 # each file will contain batch_size games
 layer = 7
-load_dir = "runs/jumping-plant-20.pth"
-save_dir = "data_probing/"
+load_dir = "runs/kvQjESnM/" # run directory
+save_dir = None # if None : will default to load_dir/data_probing
 data_dir = "data/val"
-
-# todo : load from a (future) config file
-d_model = 512
-n_layers = 8
-n_heads = 8
-
-dropout = 0.
-bias = False
-# todo : load from a (future) config file
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # -------------------------------------------------------
 
-config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=True)
+if save_dir is None:
+    save_dir = os.path.join(load_dir, "data_probing/")
+    os.makedirs(save_dir, exist_ok=True)
+
+config_dir = os.path.join(load_dir, 'config.json')
+checkpoint_dir = os.path.join(load_dir, 'model.pth')
+
+config_json = json.load(open(config_dir))
+architecture = config_json['architecture']
+del config_json['architecture']
+
+if architecture == "Transformer": 
+    config = TransformerConfig(**config_json)
+elif architecture == "Mamba":
+    del config_json['architecture']
+    config = MambaConfig(**config_json)
+else:
+    raise NotImplementedError
+
 model = LM(config, vocab_size=65).to(device)
 
-checkpoint = torch.load(load_dir, map_location=device)
-model.load_state_dict({key.replace('_orig_mod.', ''): value for key, value in checkpoint['model'].items()}) # todo : plus besoin si unoptimized model stored
-print(f"Successfully loaded model from {load_dir}.")
+checkpoint = torch.load(checkpoint_dir, map_location=device)
+model.load_state_dict(checkpoint['model'])
+print(f"Successfully loaded checkpoint from {load_dir}.")
 model.eval()
 
 ds_val = OthelloDataset(data_dir, seed=47)

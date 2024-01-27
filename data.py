@@ -58,7 +58,7 @@ class OthelloDataset(torch.utils.data.IterableDataset):
                     yield x, y
 
 class ProbingDataset(torch.utils.data.IterableDataset):
-    def __init__(self, dir_activations: str = "data_probing/layer_7/", dir_boards: str = "data_probing/"):
+    def __init__(self, dir_activations: str, dir_boards: str):
         super().__init__()
 
         self.dir_activations = dir_activations

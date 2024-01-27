@@ -8,4 +8,4 @@ data/
 **/*.pth
 **/*.tar.xz
 **/*.npy
-othello_training.ipynb
+**/*.json

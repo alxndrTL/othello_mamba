@@ -5,17 +5,12 @@ not implemented
 -gradient acc
 -multiple gpus (DDP)
 -checkpoint saving during training
+-save for HF (model_export dans llama2.c/train.py ????)
 
 todo : 
 -flops util (in final log)
 -weight decay different pour certains params
-
--SAVE THE UNCOMPILED MODEL
--save for HF (model_export dans llama2.c/train.py ????)
-
 -mamba en float32 : attention ! justement, garder les .float() ? regarder le code officiel
-
--save config as well, and load from it. (will also be used by downstream scripts like eval.py and data_probing.py etcetc)
 
 """
 
@@ -25,6 +20,8 @@ import time
 import random
 import string
 from contextlib import nullcontext
+from dataclasses import asdict
+import json
 
 import torch
 import torch.nn.functional as F
@@ -39,27 +36,24 @@ from eval import eval
 
 # -------------------------------------------------------
 
-log_wandb = False
-
+# model parameters
+architecture = "Transformer" # Transformer or Mamba
 d_model = 512
 n_layers = 8
+bias = False
+
 n_heads = 8
+dropout = 0.
+use_flash_attention = True
 
+# training parameters
+num_iters = 200 # 1000 = 1 min
 batch_size = 16
-
-num_iters = 500 # 1000 = 1 min
-train_log_interval = 50
-eval_acc_interval = 1000
-eval_val_interval = 200
-eval_iters = 50
 
 lr = 1e-3
 lr_min = 1e-5 # as in Mamba paper
 lr_warmup_iters = 100
 lr_decay_iters = 10000 # num_iters as in Chinchilla
-
-dropout = 0.
-bias = False
 
 adam_b1 = 0.9
 adam_b2 = 0.95
@@ -68,16 +62,24 @@ clip_value_grad = 1.0
 weight_decay = 0.1
 
 use_torch_compile = False
-use_flash_attention = True
 
 device = "cuda" # cpu, cuda:0, cuda:1, ...
 dtype = "float32" # float32, float16 or bfloat16 (float16 will use a GradScaler)
 
 load_checkpoint = False
-checkpoint_load_dir = "runs/sleek-water-17.pth" # where to load from (if load_checkpoint)
+load_dir = "runs/MetaFUUs/" # where to load from (if load_checkpoint is set)
+
+save_dir = "runs/" # where to save to (ignored if load_checkpoint is set)
 
 data_dir = "data/"
-save_dir = "runs/" # where to save to
+
+# logging parameters
+log_wandb = False
+
+train_log_interval = 50
+eval_acc_interval = 1000
+eval_val_interval = 200
+eval_iters = 50
 
 # -------------------------------------------------------
 
@@ -90,7 +92,7 @@ dtype_ctx = (nullcontext() if device_type == "cpu" else torch.amp.autocast(devic
 if log_wandb:
     wandb.init(project="othello",
             config={
-                "architecture": "Transformer",
+                "architecture": architecture,
                 "d_model": d_model,
                 "n_layers": n_layers,
                 "n_heads": n_heads,
@@ -113,9 +115,14 @@ if log_wandb:
 else:
     run_name = ''.join(random.choice(string.ascii_letters) for _ in range(8))
 
-save_dir = os.path.join(save_dir, run_name + '.pth')
+if load_checkpoint:
+    save_dir = load_dir
+    print(f"Running with a loaded checkpoint. Will be saved in {save_dir}")
+else:
+    save_dir = os.path.join(save_dir, run_name)
+    os.makedirs(save_dir, exist_ok=True)
 
-print(f"Run name: {run_name}.")
+    print(f"Run name: {run_name}.")
 
 # cosine with warmup (taken from @karpathy)
 def get_lr(it):
@@ -134,6 +141,7 @@ def get_lr(it):
     coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))  # coeff ranges 0..1
     return lr_min + coeff * (lr - lr_min)
 
+# dataset
 train_dir = os.path.join(data_dir, "train")
 val_dir = os.path.join(data_dir, "val")
 
@@ -144,8 +152,14 @@ ds_val = OthelloDataset(val_dir)
 loader_val = torch.utils.data.DataLoader(ds_val, batch_size=batch_size, num_workers=0, pin_memory=True)
 iter_val = iter(loader_val)
 
-#config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
-config = MambaConfig(d_model=d_model, n_layers=n_layers)
+# model
+if architecture == "Transformer":
+    config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
+elif architecture == "Mamba":
+    config = MambaConfig(d_model=d_model, n_layers=n_layers)
+else:
+    raise NotImplementedError
+
 model = LM(config, vocab_size=65).to(device)
 optim = torch.optim.AdamW(model.parameters(), lr=lr, betas=(adam_b1, adam_b2), weight_decay=weight_decay)
 scaler = torch.cuda.amp.GradScaler(enabled=(dtype=="float16"))
@@ -159,12 +173,29 @@ if use_torch_compile:
     print("Done compiling.")
 
 if load_checkpoint:
-    checkpoint = torch.load(checkpoint_load_dir, map_location=device)
+    config_dir = os.path.join(load_dir, 'config.json')
+    checkpoint_dir = os.path.join(load_dir, 'model.pth')
+    
+    config_json = json.load(open(config_dir))
+
+    assert config_json['architecture'] == architecture, f"Hyperparameters in train.py are different than those found in loaded config (from {config_dir})"
+    del config_json['architecture']
+
+    if architecture == "Transformer":
+        config_loaded = TransformerConfig(**config_json)
+    elif architecture == "Mamba":
+        config_loaded = MambaConfig(**config_json)
+    else:
+        raise NotImplementedError
+
+    assert config == config_loaded, f"Hyperparameters in train.py are different than those found in loaded config (from {config_dir})"
+
+    checkpoint = torch.load(checkpoint_dir, map_location=device)
     model.load_state_dict(checkpoint['model'])
     optim.load_state_dict(checkpoint['optimizer'])
     scaler.load_state_dict(checkpoint['scaler'])
 
-    print(f"Successfully loaded checkpoint from {checkpoint_load_dir}.")
+    print(f"Successfully loaded checkpoint from {load_dir}.")
 
 print("Training is starting.")
 start_time = time.time()
@@ -219,7 +250,7 @@ for iter, data in enumerate(loader):
     if iter % eval_acc_interval == 0:
         with torch.no_grad():
             model.eval()
-            acc = eval(unoptimized_model, device, 10, loader_val) # evaluate on 10 games
+            acc = eval(unoptimized_model, device, 10) # evaluate on 10 games (unoptimized_model is faster)
             model.train()
         to_log.update({"accuracy": acc})
 
@@ -242,15 +273,27 @@ for iter, data in enumerate(loader):
 end_time = time.time()
 print(f"Training is done. Took {(end_time-start_time)/60:.2f} minutes.")
 
-checkpoint = {"model": model.state_dict(),
+# saving : config + model checkpoint
+config_dict = asdict(config)
+
+if isinstance(config, TransformerConfig):
+    config_dict['architecture'] = "Transformer"
+elif isinstance(config, MambaConfig):
+    config_dict['architecture'] = "Mamba"
+else:
+    raise NotImplementedError
+
+json.dump(config_dict, open(os.path.join(save_dir, 'config.json'), 'w'))
+
+checkpoint = {"model": unoptimized_model.state_dict(),
               "optimizer": optim.state_dict(),
               "scaler": scaler.state_dict()}
-torch.save(checkpoint, save_dir)
+torch.save(checkpoint, os.path.join(save_dir, "model.pth"))
 
-print(f"Successfully saved checkpoint in {save_dir}.")
+print(f"Successfully saved checkpoint and config in {save_dir}.")
 
 model.eval()
-final_acc = eval(unoptimized_model, device, 50, loader_val)
+final_acc = eval(unoptimized_model, device, 50)
 model.train()
 print(f"Final accuracy: {100.*final_acc:.2f}%")
 

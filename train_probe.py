@@ -1,4 +1,6 @@
+import os
 import random
+import json
 
 import torch
 import torch.nn as nn
@@ -7,21 +9,22 @@ import torch.nn.functional as F
 from data import ProbingDataset
 from othello import OthelloGame
 from models.transformer.transformer import TransformerConfig
+from models.mamba.mamba import MambaConfig
 from models.lm import LM
 
 # -------------------------------------------------------
 
-dir_activations = "data_probing/layer_7/"
-dir_boards = "data_probing/"
 layer = 7
-
-load_dir = "runs/jumping-plant-20.pth"
+load_dir = "runs/kvQjESnM/" # run directory
+dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
+dir_boards = None # if None, will default to load_dir/data_probing
 
 batch_size = 256
 num_iters = 20000
 
 num_games = 100 # number of games to compute acc
 
+# probe training parameters
 lr = 1e-4
 weight_decay = 0.01
 adam_b1 = 0.9
@@ -29,21 +32,40 @@ adam_b2 = 0.99
 
 print_interval = 5000
 
-# todo : load from a (future) config file
-d_model = 512
-n_layers = 8
-n_heads = 8
-
-dropout = 0.
-bias = False
-# todo : load from a (future) config file
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # -------------------------------------------------------
 
+if dir_activations is None:
+    dir_activations = os.path.join(load_dir, "data_probing", f"layer_{layer}")
+
+if dir_boards is None:
+    dir_boards = os.path.join(load_dir, "data_probing")
+
 ds = ProbingDataset(dir_activations=dir_activations, dir_boards=dir_boards)
 loader = torch.utils.data.DataLoader(ds, batch_size=batch_size, num_workers=0, pin_memory=True)
+
+config_dir = os.path.join(load_dir, 'config.json')
+checkpoint_dir = os.path.join(load_dir, 'model.pth')
+
+config_json = json.load(open(config_dir))
+architecture = config_json['architecture']
+del config_json['architecture']
+
+if architecture == "Transformer": 
+    config = TransformerConfig(**config_json)
+elif architecture == "Mamba":
+    del config_json['architecture']
+    config = MambaConfig(**config_json)
+else:
+    raise NotImplementedError
+
+model = LM(config, vocab_size=65).to(device)
+
+checkpoint = torch.load(checkpoint_dir, map_location=device)
+model.load_state_dict(checkpoint['model'])
+print(f"Successfully loaded checkpoint from {load_dir}.")
+model.eval()
 
 class Probe(nn.Module):
     def __init__(self, d_model: int):
@@ -57,7 +79,7 @@ class Probe(nn.Module):
         # x : (B, 512) -> y : (B, 3*8*8)
         return self.fc(x)
     
-probe = Probe(d_model).to(device)
+probe = Probe(config.d_model).to(device)
 optim = torch.optim.AdamW(probe.parameters(), lr=lr, weight_decay=weight_decay, betas=(adam_b1, adam_b2))
 
 print("Starting training...")
@@ -84,15 +106,6 @@ for iter, data in enumerate(loader):
         break
 
 print("Training done.")
-
-config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=True)
-model = LM(config, vocab_size=65).to(device)
-
-checkpoint = torch.load(load_dir, map_location=device)
-model.load_state_dict({key.replace('_orig_mod.', ''): value for key, value in checkpoint['model'].items()}) # todo : plus besoin si unoptimized model stored
-print(f"Successfully loaded model from {load_dir}.")
-
-model.eval()
 
 n_games = 100
 

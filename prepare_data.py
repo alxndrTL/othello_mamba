@@ -42,5 +42,5 @@ for i, filename in enumerate(pickles_files):
 
         np_games.tofile(os.path.join(output_dir, f"games_{i}.bin"))
     
-    if i%10==0:
+    if i % 10 == 0:
         print(f"Processing file {i}/{len(pickles_files)}")
