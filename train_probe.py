@@ -112,7 +112,7 @@ n_games = 100
 cell_acc = 0
 board_acc = 0
 
-for _ in range(n_games): # 100 = num_games
+for _ in range(n_games):
     moves = []
     boards = []
 
@@ -147,10 +147,10 @@ for _ in range(n_games): # 100 = num_games
 cell_acc /= n_games
 board_acc /= n_games
 
-print(f"Mean cell accuracy: {100*cell_acc:.2f}%")
-print(f"Mean board accuracy: {100*board_acc:.2f}%")
+print(f"Mean cell accuracy: {100*cell_acc:.2f}% (vs {66}% for an untrained model)")
+print(f"Mean board accuracy: {100*board_acc:.2f}% (vs {0}% for an untrained model)")
 
-# à comparer avec :
-# 1) probe non trained et même model : 33%, 0%
-# 2) probe non trained et model non trained : 33%, 0%
-# 3) probe trained et model non trained : 66%, 0%
+# its important to compare the results with the "trained probe on an untrained model" setup :
+# 1) untrained probe on trained model   : 33%, 0%
+# 2) untrained probe on untrained model : 33%, 0%
+# 3) trained probe on untrained model   : 66%, 0% (most important)

@@ -32,7 +32,7 @@ from models.lm import LM
 from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
 from data import OthelloDataset
-from eval import eval
+from eval import eval_legal_moves
 
 # -------------------------------------------------------
 
@@ -175,7 +175,7 @@ if use_torch_compile:
 if load_checkpoint:
     config_dir = os.path.join(load_dir, 'config.json')
     checkpoint_dir = os.path.join(load_dir, 'model.pth')
-    
+
     config_json = json.load(open(config_dir))
 
     assert config_json['architecture'] == architecture, f"Hyperparameters in train.py are different than those found in loaded config (from {config_dir})"
@@ -250,7 +250,7 @@ for iter, data in enumerate(loader):
     if iter % eval_acc_interval == 0:
         with torch.no_grad():
             model.eval()
-            acc = eval(unoptimized_model, device, 10) # evaluate on 10 games (unoptimized_model is faster)
+            acc = eval_legal_moves(unoptimized_model, device, 10) # evaluate on 10 games (unoptimized_model is faster)
             model.train()
         to_log.update({"accuracy": acc})
 
