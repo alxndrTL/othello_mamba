@@ -6,6 +6,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from mamba_ssm import Mamba as MambaBlockCuda
+
 from models.mamba.pscan import pscan
 
 """
@@ -92,7 +94,8 @@ class ResidualBlock(nn.Module):
     def __init__(self, config: MambaConfig):
         super().__init__()
 
-        self.mixer = MambaBlock(config)
+        #self.mixer = MambaBlock(config)
+        self.mixer = MambaBlockCuda(d_model=config.d_model)
         self.norm = RMSNorm(config.d_model)
 
     def forward(self, x):

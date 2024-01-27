@@ -15,7 +15,7 @@ from models.lm import LM
 # -------------------------------------------------------
 
 layer = 7
-load_dir = "runs/kvQjESnM/" # run directory
+load_dir = "runs/fanciful-resonance-26/" # run directory
 dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
 dir_boards = None # if None, will default to load_dir/data_probing
 
@@ -30,7 +30,7 @@ weight_decay = 0.01
 adam_b1 = 0.9
 adam_b2 = 0.99
 
-print_interval = 5000
+print_interval = 1000
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

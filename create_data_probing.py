@@ -13,10 +13,10 @@ from models.lm import LM
 
 # -------------------------------------------------------
 
-total_games = 100
+total_games = 1000
 batch_size = 256 # each file will contain batch_size games
-layer = 6
-load_dir = "runs/kvQjESnM/" # run directory
+layer = 7
+load_dir = "runs/fanciful-resonance-26/" # run directory
 save_dir = None # if None : will default to load_dir/data_probing
 data_dir = "data/val"
 

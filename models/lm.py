@@ -3,7 +3,6 @@ import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from models.transformer.transformer import Transformer, TransformerConfig, RMSNorm
 from models.mamba.mamba import Mamba, MambaConfig

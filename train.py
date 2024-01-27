@@ -13,6 +13,11 @@ todo :
 -weight decay different pour certains params
 -mamba en float32 : attention ! justement, garder les .float() ? regarder le code officiel
 
+Notes :
+-given the same d_model, Mamba should use 2x more layers than a Transformer to match its number of params
+(its not actually deeper than the Transformer, it's just that the definition of a layer is not the same in the 2 models)
+-for Transformer on A100 80GB (d_model=512, n_layers=8, n_heads=8, batch_size=256), 30,000 steps = 18 min
+
 """
 
 import os
@@ -39,22 +44,22 @@ from eval import eval_legal_moves
 
 # model parameters
 architecture = "Transformer" # Transformer or Mamba
-d_model = 512
+d_model = 288
 n_layers = 8
 bias = False
 
-n_heads = 8
+n_heads = 6
 dropout = 0.
 use_flash_attention = True
 
 # training parameters
-num_iters = 200 # 1000 = 1 min
-batch_size = 16
+num_iters = 20000 # 1000 = 0.6 min
+batch_size = 256
 
 lr = 1e-3
 lr_min = 1e-5 # as in Mamba paper
 lr_warmup_iters = 100
-lr_decay_iters = 10000 # num_iters as in Chinchilla
+lr_decay_iters = 20000 # num_iters as in Chinchilla
 
 adam_b1 = 0.9
 adam_b2 = 0.95
@@ -62,20 +67,20 @@ adam_b2 = 0.95
 clip_value_grad = 1.0
 weight_decay = 0.1
 
-use_torch_compile = False
+use_torch_compile = True
 
 device = "cuda" # cpu, cuda:0, cuda:1, ...
-dtype = "float32" # float32, float16 or bfloat16 (float16 will use a GradScaler)
+dtype = "bfloat16" # float32, float16 or bfloat16 (float16 will use a GradScaler)
 
 load_checkpoint = False
-load_dir = "runs/MetaFUUs/" # where to load from (if load_checkpoint is set)
+load_dir = "" # where to load from (if load_checkpoint is set)
 
 save_dir = "runs/" # where to save to (ignored if load_checkpoint is set)
 
 data_dir = "data/"
 
 # logging parameters
-log_wandb = False
+log_wandb = True
 
 train_log_interval = 50
 eval_acc_interval = 1000
@@ -294,7 +299,7 @@ torch.save(checkpoint, os.path.join(save_dir, "model.pth"))
 print(f"Successfully saved checkpoint and config in {save_dir}.")
 
 model.eval()
-final_acc = eval(unoptimized_model, device, 50)
+final_acc = eval_legal_moves(unoptimized_model, device, 50)
 model.train()
 print(f"Final accuracy: {100.*final_acc:.2f}%")
 
