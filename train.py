@@ -6,6 +6,7 @@ not implemented
 -multiple gpus (DDP)
 -checkpoint saving during training
 -save for HF (model_export dans llama2.c/train.py ????)
+-training from a checkpoint : it works, but lr must be manually set to cst=lr_min
 
 todo : 
 -flops util (in final log)
