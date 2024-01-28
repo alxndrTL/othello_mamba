@@ -1,6 +1,7 @@
 import os
 import random
 import json
+import argparse
 
 import torch
 import torch.nn as nn
@@ -15,7 +16,7 @@ from models.lm import LM
 # -------------------------------------------------------
 
 layer = 7
-load_dir = "runs/fanciful-resonance-26/" # run directory
+load_dir = None # run directory
 dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
 dir_boards = None # if None, will default to load_dir/data_probing
 
@@ -36,6 +37,15 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # -------------------------------------------------------
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--load_dir", type=str, default=None, help="something like runs/name_run/")
+args = parser.parse_args()
+
+if args.load_dir is not None:
+    load_dir = args.load_dir
+
+assert load_dir is not None, "Please provide the run path (either as an argument or in the file)"
+    
 if dir_activations is None:
     dir_activations = os.path.join(load_dir, "data_probing", f"layer_{layer}")
 
