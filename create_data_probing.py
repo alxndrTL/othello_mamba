@@ -141,5 +141,3 @@ for i, data in enumerate(loader_val):
         break
 
 print(f"Done creating and saving the boards dataset.")
-
-# TODO : multiple layers at once

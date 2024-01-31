@@ -57,7 +57,7 @@ num_iters = 20000 # 1000 = 0.6 min
 batch_size = 256
 
 lr = 1e-3
-lr_min = 1e-5 # as in Mamba paper
+lr_min = 1e-4 # as in Mamba paper
 lr_warmup_iters = 100
 lr_decay_iters = 20000 # num_iters as in Chinchilla
 

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mamba_ssm import Mamba as MambaBlockCuda
+#from mamba_ssm import Mamba as MambaBlockCuda
 
 from models.mamba.pscan import pscan
 

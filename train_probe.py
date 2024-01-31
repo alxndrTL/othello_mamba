@@ -21,7 +21,7 @@ dir_activations = None # if None, will default to load_dir/data_probing/layer_{
 dir_boards = None # if None, will default to load_dir/data_probing
 
 batch_size = 256
-num_iters = 20000
+num_iters = 40000
 
 num_games = 100 # number of games to compute acc
 
@@ -140,6 +140,7 @@ for _ in range(n_games):
         if game.next_hand_color == -1:
             board[board == 1] = 2
             board[board == -1] = 1
+            
         else:
             board[board == -1] = 2
         boards.append(board)
@@ -148,8 +149,8 @@ for _ in range(n_games):
     x = x.to(device).unsqueeze(0)
     activations = model.forward_up_to(x, layer) # (B=1, 59, d_model)
 
-    preds = torch.argmax(probe(activations).view(-1, 64, 3), dim=-1)[5:-4, :]
-    boards = torch.cat(boards).to(device).view(-1, 64)[5:-4, :]
+    preds = torch.argmax(probe(activations).view(-1, 64, 3), dim=-1)
+    boards = torch.cat(boards).to(device).view(-1, 64)
 
     cell_acc += torch.mean((boards == preds).float()).item() # mean cell accuracy
     board_acc += torch.mean((boards == preds).all(dim=1).float()).item() # mean board accuracy
