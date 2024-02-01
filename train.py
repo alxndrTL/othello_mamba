@@ -44,10 +44,14 @@ from eval import eval_legal_moves
 
 # model parameters
 architecture = "Transformer" # Transformer or Mamba
-d_model = 288
+d_model = 512
 n_layers = 8
 bias = False
 
+# Mamba specific
+use_cuda = True # choose True if you can (mamba-ssm installed)
+
+# Transformer specific
 n_heads = 6
 dropout = 0.
 use_flash_attention = True
@@ -80,7 +84,7 @@ save_dir = "runs/" # where to save to (ignored if load_checkpoint is set)
 data_dir = "data/"
 
 # logging parameters
-log_wandb = True
+log_wandb = False
 
 train_log_interval = 50
 eval_acc_interval = 1000
@@ -162,7 +166,7 @@ iter_val = iter(loader_val)
 if architecture == "Transformer":
     config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
 elif architecture == "Mamba":
-    config = MambaConfig(d_model=d_model, n_layers=n_layers)
+    config = MambaConfig(d_model=d_model, n_layers=n_layers, use_cuda=use_cuda)
 else:
     raise NotImplementedError
 

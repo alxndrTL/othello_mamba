@@ -47,7 +47,7 @@ class MambaConfig:
     bias: bool = False
     conv_bias: bool = True
 
-    use_cuda: bool = True # if True, use mamba_ssm by Albert Gu and Tri Dao. if False, fallsback to mamba.py
+    use_cuda: bool = False # if True, use mamba_ssm by Albert Gu and Tri Dao. if False, fallsback to mamba.py
     pscan: bool = True # use parallel scan mode or sequential mode when training
 
     def __post_init__(self):
@@ -96,7 +96,7 @@ class ResidualBlock(nn.Module):
     def __init__(self, config: MambaConfig):
         super().__init__()
         
-        if self.config.use_cuda:
+        if config.use_cuda:
             from mamba_ssm import Mamba as MambaBlockCuda
             self.mixer = MambaBlockCuda(d_model=config.d_model)
         else:
