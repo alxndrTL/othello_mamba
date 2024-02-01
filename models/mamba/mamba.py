@@ -6,8 +6,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-#from mamba_ssm import Mamba as MambaBlockCuda
-
 from models.mamba.pscan import pscan
 
 """
@@ -49,6 +47,7 @@ class MambaConfig:
     bias: bool = False
     conv_bias: bool = True
 
+    use_cuda: bool = True # if True, use mamba_ssm by Albert Gu and Tri Dao. if False, fallsback to mamba.py
     pscan: bool = True # use parallel scan mode or sequential mode when training
 
     def __post_init__(self):
@@ -66,13 +65,16 @@ class Mamba(nn.Module):
         self.layers = nn.ModuleList([ResidualBlock(config) for _ in range(config.n_layers)])
         #self.norm_f = RMSNorm(config.d_model)
 
-    def forward(self, x):
+    def forward(self, x, stop_at_layer : int = None):
         # x : (B, L, D)
 
         # y : (B, L, D)
 
-        for layer in self.layers:
+        for i, layer in enumerate(self.layers):
             x = layer(x)
+
+            if stop_at_layer == i+1:
+                return x
 
         #x = self.norm_f(x)
 
@@ -93,9 +95,12 @@ class Mamba(nn.Module):
 class ResidualBlock(nn.Module):
     def __init__(self, config: MambaConfig):
         super().__init__()
-
-        #self.mixer = MambaBlock(config)
-        self.mixer = MambaBlockCuda(d_model=config.d_model)
+        
+        if self.config.use_cuda:
+            from mamba_ssm import Mamba as MambaBlockCuda
+            self.mixer = MambaBlockCuda(d_model=config.d_model)
+        else:
+            self.mixer = MambaBlock(config)
         self.norm = RMSNorm(config.d_model)
 
     def forward(self, x):

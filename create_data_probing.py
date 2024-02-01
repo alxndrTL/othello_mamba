@@ -15,8 +15,8 @@ from models.lm import LM
 # -------------------------------------------------------
 
 total_games = 1000
-batch_size = 256 # each file will contain batch_size games
-layer = 7
+batch_size = 48 # each file will contain batch_size games
+layer = 10
 load_dir = None # run directory
 save_dir = None # if None : will default to load_dir/data_probing
 data_dir = "data/val"
@@ -48,7 +48,6 @@ del config_json['architecture']
 if architecture == "Transformer": 
     config = TransformerConfig(**config_json)
 elif architecture == "Mamba":
-    del config_json['architecture']
     config = MambaConfig(**config_json)
 else:
     raise NotImplementedError

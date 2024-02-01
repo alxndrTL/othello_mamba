@@ -15,7 +15,7 @@ from models.lm import LM
 
 # -------------------------------------------------------
 
-layer = 7
+layer = 10
 load_dir = None # run directory
 dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
 dir_boards = None # if None, will default to load_dir/data_probing
@@ -65,7 +65,6 @@ del config_json['architecture']
 if architecture == "Transformer": 
     config = TransformerConfig(**config_json)
 elif architecture == "Mamba":
-    del config_json['architecture']
     config = MambaConfig(**config_json)
 else:
     raise NotImplementedError
@@ -117,7 +116,7 @@ for iter, data in enumerate(loader):
 
 print("Training done.")
 
-n_games = 100
+n_games = 500
 
 cell_acc = 0
 board_acc = 0
