@@ -167,7 +167,8 @@ else:
     raise NotImplementedError
 
 model = LM(config, vocab_size=65).to(device)
-optim = torch.optim.AdamW(model.parameters(), lr=lr, betas=(adam_b1, adam_b2), weight_decay=weight_decay)
+#optim = torch.optim.AdamW(model.parameters(), lr=lr, betas=(adam_b1, adam_b2), weight_decay=weight_decay)
+optim = model.configure_optimizers(weight_decay, lr, (adam_b1, adam_b2), device_type)
 scaler = torch.cuda.amp.GradScaler(enabled=(dtype=="float16"))
 
 print(f"Model initialized. Number of parameters : {sum([p.numel() for p in model.parameters()])}.")
@@ -201,6 +202,7 @@ if load_checkpoint:
     optim.load_state_dict(checkpoint['optimizer'])
     scaler.load_state_dict(checkpoint['scaler'])
 
+    checkpoint = None
     print(f"Successfully loaded checkpoint from {load_dir}.")
 
 print("Training is starting.")
@@ -208,7 +210,7 @@ start_time = time.time()
 
 for iter, data in enumerate(loader):
     x, y = data
-    x, y = x.to(device), y.to(device)
+    x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
 
     with dtype_ctx:
         logits = model(x)
