@@ -61,7 +61,7 @@ num_iters = 20000 # 1000 = 0.6 min
 batch_size = 256
 
 lr = 1e-3
-lr_min = 1e-4 # as in Mamba paper
+lr_min = 1e-4 # as in Mamba paper and Chinchilla
 lr_warmup_iters = 100
 lr_decay_iters = 20000 # num_iters as in Chinchilla
 
@@ -177,12 +177,6 @@ scaler = torch.cuda.amp.GradScaler(enabled=(dtype=="float16"))
 
 print(f"Model initialized. Number of parameters : {sum([p.numel() for p in model.parameters()])}.")
 
-unoptimized_model = model
-if use_torch_compile:
-    print("Compiling the model...")
-    model = torch.compile(model)
-    print("Done compiling.")
-
 if load_checkpoint:
     config_dir = os.path.join(load_dir, 'config.json')
     checkpoint_dir = os.path.join(load_dir, 'model.pth')
@@ -208,6 +202,12 @@ if load_checkpoint:
 
     checkpoint = None
     print(f"Successfully loaded checkpoint from {load_dir}.")
+
+unoptimized_model = model
+if use_torch_compile:
+    print("Compiling the model...")
+    model = torch.compile(model)
+    print("Done compiling.")
 
 print("Training is starting.")
 start_time = time.time()
@@ -278,6 +278,13 @@ for iter, data in enumerate(loader):
         # logging
         if log_wandb:
             wandb.log(to_log, step=iter)
+
+    """
+    if iter%20000==0:
+        os.makedirs(os.path.join(save_dir, f"ckpt_{iter}/"), exist_ok=True)
+        checkpoint = {"model": unoptimized_model.state_dict()}
+        torch.save(checkpoint, os.path.join(save_dir, f"ckpt_{iter}/model.pth"))
+    """
 
     if iter >= num_iters:
         break

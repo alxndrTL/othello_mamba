@@ -1,5 +1,4 @@
 import os
-import random
 import json
 import argparse
 
@@ -8,22 +7,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from data import ProbingDataset
-from othello import OthelloGame
 from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
 from models.lm import LM
+from eval import eval_probe_accuracy
 
 # -------------------------------------------------------
 
-layer = 10
+layer = 7
 load_dir = None # run directory
 dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
 dir_boards = None # if None, will default to load_dir/data_probing
 
-batch_size = 256
-num_iters = 40000
+save_dir = None # if None, will default to load_dir/probe_{layer}.pth
 
-num_games = 100 # number of games to compute acc
+batch_size = 256
+num_iters = 120000
+
+n_games = 500 # number of games to compute acc
 
 # probe training parameters
 lr = 1e-4
@@ -106,56 +107,26 @@ for iter, data in enumerate(loader):
     loss.backward()
     optim.step()
 
+    # printing
     if iter % print_interval == 0:
+        cell_acc, board_acc = eval_probe_accuracy(model, probe, layer, device, n_games=10)
+
         num_digits = len(str(num_iters))
         formatted_iter = f"{iter:0{num_digits}d}"
-        print(f"Step {formatted_iter}/{num_iters}. train loss = {loss.item():.3f}")
+        print(f"Step {formatted_iter}/{num_iters}. train loss = {loss.item():.3f}. mean cell acc = {100*cell_acc:.2f}%. mean board acc = {100*board_acc:.2f}%")
 
     if iter >= num_iters:
         break
 
 print("Training done.")
 
-n_games = 500
+save_dir = os.path.join(load_dir, f"probe_{layer}.pth")
+checkpoint = {"probe": probe.state_dict()}
+torch.save(checkpoint, save_dir)
 
-cell_acc = 0
-board_acc = 0
+print(f"Sucessfully saved trained probe in {save_dir}")
 
-for _ in range(n_games):
-    moves = []
-    boards = []
-
-    game = OthelloGame()
-    for t in range(60):
-        legal_moves = game.get_valid_moves()
-        if legal_moves == []:
-            break
-
-        move = random.choice(legal_moves)
-        game.play_move(move)
-        moves.append(move)
-        
-        board = torch.from_numpy(game.state.copy()).flatten()
-        if game.next_hand_color == -1:
-            board[board == 1] = 2
-            board[board == -1] = 1
-            
-        else:
-            board[board == -1] = 2
-        boards.append(board)
-
-    x = torch.tensor(moves)+1
-    x = x.to(device).unsqueeze(0)
-    activations = model.forward_up_to(x, layer) # (B=1, 59, d_model)
-
-    preds = torch.argmax(probe(activations).view(-1, 64, 3), dim=-1)
-    boards = torch.cat(boards).to(device).view(-1, 64)
-
-    cell_acc += torch.mean((boards == preds).float()).item() # mean cell accuracy
-    board_acc += torch.mean((boards == preds).all(dim=1).float()).item() # mean board accuracy
-
-cell_acc /= n_games
-board_acc /= n_games
+cell_acc, board_acc = eval_probe_accuracy(model, probe, layer, device, n_games=500)
 
 print(f"Mean cell accuracy: {100*cell_acc:.2f}% (vs {66}% for an untrained model)")
 print(f"Mean board accuracy: {100*board_acc:.2f}% (vs {0}% for an untrained model)")

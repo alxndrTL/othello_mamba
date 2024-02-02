@@ -63,6 +63,48 @@ def eval_legal_moves(model: nn.Module, device, n_games: int, sample: bool = Fals
     
     return total_legal_moves/total_moves
 
+def eval_probe_accuracy(model: nn.Module, probe: nn.Module, layer: int, device, n_games: int):
+    cell_acc = 0
+    board_acc = 0
+
+    for _ in range(n_games):
+        moves = []
+        boards = []
+
+        game = OthelloGame()
+        for _ in range(60):
+            legal_moves = game.get_valid_moves()
+            if legal_moves == []:
+                break
+
+            move = random.choice(legal_moves)
+            game.play_move(move)
+            moves.append(move)
+            
+            board = torch.from_numpy(game.state.copy()).flatten()
+            if game.next_hand_color == -1:
+                board[board == 1] = 2
+                board[board == -1] = 1
+            else:
+                board[board == -1] = 2
+            boards.append(board)
+
+        x = torch.tensor(moves)+1
+        x = x.to(device).unsqueeze(0)
+        activations = model.forward_up_to(x, layer) # (B=1, 59, d_model)
+
+        preds = torch.argmax(probe(activations).view(-1, 64, 3), dim=-1)
+        boards = torch.cat(boards).to(device).view(-1, 64)
+
+        cell_acc += torch.mean((boards == preds).float()).item() # mean cell accuracy
+        board_acc += torch.mean((boards == preds).all(dim=1).float()).item() # mean board accuracy
+
+    cell_acc /= n_games
+    board_acc /= n_games
+
+    return cell_acc, board_acc
+
+""" to eval legal move accuracy from cmd line """
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
