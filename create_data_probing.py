@@ -14,9 +14,9 @@ from models.lm import LM
 
 # -------------------------------------------------------
 
-total_games = 50000
+total_games = 10000
 batch_size = 128 # each file will contain batch_size games
-layer = 7 # from 1 to n_layers
+layer = 15 # from 1 to n_layers
 load_dir = None # run directory
 save_dir = None # if None : will default to load_dir/data_probing
 data_dir = "data/val"
@@ -32,7 +32,7 @@ args = parser.parse_args()
 if args.load_dir is not None:
     load_dir = args.load_dir
 
-assert load_dir is not None, "Please provide the run path (either as an argument or in the file)"
+assert load_dir is not None, "Please provide the run path (either as an argument or in the load_dir variable in the file)"
 
 if save_dir is None:
     save_dir = os.path.join(load_dir, "data_probing/")

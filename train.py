@@ -71,7 +71,7 @@ adam_b2 = 0.95
 clip_value_grad = 1.0
 weight_decay = 0.1
 
-use_torch_compile = True
+use_torch_compile = True # do not toggle if using Mamba
 
 device = "cuda" # cpu, cuda:0, cuda:1, ...
 dtype = "bfloat16" # float32, float16 or bfloat16 (float16 will use a GradScaler)

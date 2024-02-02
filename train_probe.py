@@ -14,7 +14,7 @@ from eval import eval_probe_accuracy
 
 # -------------------------------------------------------
 
-layer = 7
+layer = 5
 load_dir = None # run directory
 dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
 dir_boards = None # if None, will default to load_dir/data_probing
@@ -22,7 +22,7 @@ dir_boards = None # if None, will default to load_dir/data_probing
 save_dir = None # if None, will default to load_dir/probe_{layer}.pth
 
 batch_size = 256
-num_iters = 120000
+num_iters = 50000
 
 n_games = 500 # number of games to compute acc
 
@@ -45,7 +45,7 @@ args = parser.parse_args()
 if args.load_dir is not None:
     load_dir = args.load_dir
 
-assert load_dir is not None, "Please provide the run path (either as an argument or in the file)"
+assert load_dir is not None, "Please provide the run path (either as an argument or in the load_dir variable in the file)"
     
 if dir_activations is None:
     dir_activations = os.path.join(load_dir, "data_probing", f"layer_{layer}")
