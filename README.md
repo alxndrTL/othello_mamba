@@ -3,3 +3,4 @@
 
 TODOs:
 -intervention
+-adapt for chess
