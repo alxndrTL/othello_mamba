@@ -14,7 +14,7 @@ from eval import eval_probe_accuracy
 
 # -------------------------------------------------------
 
-layer = 4
+layer = 5
 load_dir = None # run directory
 dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
 dir_boards = None # if None, will default to load_dir/data_probing

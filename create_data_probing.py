@@ -15,8 +15,8 @@ from models.lm import LM
 # -------------------------------------------------------
 
 total_games = 10000
-batch_size = 48 # each file will contain batch_size games
-layer = 14 # from 1 to n_layers
+batch_size = 128 # each file will contain batch_size games
+layer = 5 # from 1 to n_layers
 load_dir = None # run directory
 save_dir = None # if None : will default to load_dir/data_probing
 data_dir = "data/val"
