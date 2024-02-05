@@ -10,7 +10,7 @@ Othello is a board game played on a 8x8 grid where two players compete to flip t
 // image othello
 
 <p align="center">
-    <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="400" alt="python mamba"/>
+    <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="370" alt="python mamba"/>
 </p>
 
 You can try playing it [here](https://www.eothello.com/).
