@@ -15,8 +15,8 @@ from models.lm import LM
 # -------------------------------------------------------
 
 total_games = 10000
-batch_size = 128 # each file will contain batch_size games
-layer = 5 # from 1 to n_layers
+batch_size = 96 # each file will contain batch_size games
+layer = 12 # from 1 to n_layers
 load_dir = None # run directory
 save_dir = None # if None : will default to load_dir/data_probing
 data_dir = "data/val"
@@ -26,7 +26,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # -------------------------------------------------------
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--load_dir", type=str, default=None, help="something like runs/name_run/")
+parser.add_argument("--load_dir", type=str, default=None, help="something like runs/name_run/ (will look for a model.pth in this dir)")
 parser.add_argument("--layer", type=int, default=None)
 args = parser.parse_args()
 

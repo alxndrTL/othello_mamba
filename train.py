@@ -63,7 +63,7 @@ batch_size = 256
 lr = 1e-3
 lr_min = 1e-4 # as in Mamba paper and Chinchilla
 lr_warmup_iters = 100
-lr_decay_iters = 20000 # num_iters as in Chinchilla
+lr_decay_iters = num_iters # num_iters as in Chinchilla
 
 adam_b1 = 0.9
 adam_b2 = 0.95

@@ -14,7 +14,7 @@ from eval import eval_probe_accuracy
 
 # -------------------------------------------------------
 
-layer = 5
+layer = 12
 load_dir = None # run directory
 dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
 dir_boards = None # if None, will default to load_dir/data_probing
@@ -39,7 +39,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # -------------------------------------------------------
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--load_dir", type=str, default=None, help="something like runs/name_run/")
+parser.add_argument("--load_dir", type=str, default=None, help="something like runs/name_run/ (will look for a model.pth in this dir)")
 parser.add_argument("--layer", type=int, default=None)
 args = parser.parse_args()
 
