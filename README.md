@@ -10,7 +10,7 @@ Othello is a board game played on a 8x8 grid where two players compete to flip t
 // image othello
 
 <p align="center">
-    <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="500" alt="python mamba"/>
+    <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="350" alt="python mamba"/>
 </p>
 
 You can try playing it [here](https://www.eothello.com/).
@@ -27,7 +27,7 @@ Here is a diagram that shows the whole process :
 
 
 <p align="center">
-    <img src="assets/sumup.png" alt="diagram" width="1920" height="720" alt="python mamba"/>
+    <img src="assets/sumup.png" alt="diagram" width="1920" height="500" alt="python mamba"/>
 </p>
 
 <i>*The model represents the board as square which are empty, "mine" and "yours" and not empty, black and white***. To try to understand why, it's important to note that the model is trained to play both black and white moves (`0 15 8 42 2 58 14 ...` is composed of both black and white moves). Hence, this representation works for all the moves to predict because it is independent of which players is going to play. It's easier to work with than the black/white board representation.</i>
