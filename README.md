@@ -150,7 +150,7 @@ To conclude, we see that the Mamba performances are on par and even a bit better
 You can find all the models I trained for this project on the [wandb page](https://wandb.ai/alexandretl/othello).
 
 <b>The main next steps for this projet are :</b> 
-- train longer (especially the biggest models)
+- train longer (especially the biggest models, altough there is a loss threshold we can't go under)
 - use other sources than Othello games (chess, and even more complex)... The original goal of this experiment is to show that the model learned "something" about the process that generated the input sequence (some kind of a world model). It would be intersting to see if this hypothesis holds for more complex examples.
 
 <i>Note that the training of Mamba was particulary long (although I used the official CUDA implementation). From some benchmarks I did on the A100 80GB, it was 7.6 longer than a Transformer of the same size. (`d_model=408`, `n_layers=8` for Transformer and `16` for Mamba, `batch_size=256`, `L=60`). Interestingly, turning the `batch_size` from `256` to `64` made Mamba "only" 3 times slower than the Transformer. This is something to investigate.</i>
