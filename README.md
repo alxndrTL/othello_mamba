@@ -2,7 +2,7 @@
 This repo provides the code to implement the famous ["OthelloGPT" experiment](https://thegradient.pub/othello/) with the Mamba and Transformer architectures. It should be hackable enough to be modified to your needs - eg. replace Othello with chess.
 
 <p align="center">
-    <img src="assets/mamba_othello.png" alt="a mamba playing Othello" width="27%"/>
+    <img src="assets/mamba_othello.png" alt="a mamba playing Othello" width="35%"/>
 </p>
 
 <u>The repo features</u> :
