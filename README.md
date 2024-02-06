@@ -58,9 +58,10 @@ cd othello_mamba
 ```
 
 Then, download the data, which consists of 23M of Othello games (converted from [this repo](https://github.com/likenneth/othello_world)):
-```
+
+```bash
 wget -O data.tar.xz https://huggingface.co/datasets/alexandretl/othello/resolve/main/data.tar.xz?download=true
-tar -xf data.tar.xz (1-2 minutes)
+tar -xf data.tar.xz # (1-2 minutes)
 ```
 
 With this, you will have a `data` folder containing both a `train` and a `val` folder.
@@ -68,7 +69,7 @@ This will be used for the training of the model, as well as later when training 
 
 Now, you can train the base model (see `train.py` for hyperparameters like architecture, `d_model`, `lr`, ...):
 ```bash
-python train.py # depending on the hyperparameters and your machine, can take between 30 min to a few hours
+python train.py
 ```
 
 You will then have a `model.pth` checkpoint in the `runs/{run_name}` folder.
