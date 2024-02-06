@@ -18,7 +18,7 @@ It is designed to easily conduct the experiment from start to finish in separate
 Othello is a board game played on a 8x8 grid where two players compete to flip their opponent's pieces to their own color by trapping them between their own pieces.
 
 <p align="center">
-    <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="370" alt="python mamba"/>
+    <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="360" alt="python mamba"/>
 </p>
 
 You can try playing it [here](https://www.eothello.com/).
