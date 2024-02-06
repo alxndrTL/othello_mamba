@@ -48,7 +48,7 @@ Note that this experiment seems to confirm this hypothesis only on a simple toy 
 
 The main contribution of this repo is to provide a <b>simple, clean and hackable implementation of the OthelloGPT experiment</b>, designed to be compatible with multiple architectures, and with little effort, other sources of data (eg. chess or something more sophisticated).
 
-## Getting started
+## Getting started
 With this repo, you can train your own model (Transformer or Mamba) that predicts legal moves in Othello. Then, you can train a probe that to extract the board state from the activations of your trained model.
 
 First, clone the repo :
@@ -88,17 +88,17 @@ Please check the files `train.py`, `create_data_probing.py`, `train_probe` for h
 
 If you want to start from a pretrained model, please contact me and I will able to send you pretrained models via HF.
 
-## Results
+## Results
 So, what about Mamba ?
 
 
 
-## Learn more
+## Learn more
 - the first experiments were proposed in [Emergent World Representations: Exploring a Sequence Model Trained on a Synthetic Task](https://arxiv.org/abs/2210.13382). Li et al. successfully trained a GPT to output legal moves, and trained a (non-linear) probe to extract its representation of the board. However, the probe they trained was tasked to tell if a given square is empty, black or white given the model's activations. ([blog post](https://thegradient.pub/othello/), [code](https://github.com/likenneth/othello_world))
 - then, in [Emergent Linear Representations in World Models of Self-Supervised Sequence Models](https://arxiv.org/abs/2309.00941), Nanda et al. showed that a linear probe is sufficient, given that we task it to tell if a given square is "mine" or "yours". ([blog post](https://www.lesswrong.com/posts/nmxzr2zsjNtjaHh7x/actually-othello-gpt-has-a-linear-emergent-world#Citation_Info), [code](https://github.com/likenneth/othello_world/tree/master/mechanistic_interpretability)) Their paper and blog is targeted to lie in the field of mechanistic interpretability (of the Transformer).
 
 - more recently, Hazineh et al. reproduced the above experiments in [Linear Latent World Models in Simple Transformers: A Case Study on Othello-GPT](https://arxiv.org/abs/2310.07582), with a focus on intervention and shallow models.
 
-## TODOs:
+## TODOs:
 - intervention : "reverse" the probe to modify the internal representation of the model
 - adapt for chess
