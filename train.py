@@ -1,5 +1,6 @@
 """
 main training script.
+Depending on the hyperparameters and your machine, can take between 30 min to a few hours.
 
 When launching the training, the script will assign a name to the run (same as wandb run if log_wandb is enabled).
 It will place the config, model and checkpoints in runs/{run_name} dir.
