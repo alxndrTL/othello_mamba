@@ -2,7 +2,7 @@
 This repo provides the code to implement the famous ["OthelloGPT" experiment](https://thegradient.pub/othello/) with the Mamba and Transformer architectures. It should be hackable enough to be modified to your needs - eg. replace Othello with chess.
 
 <p align="center">
-    <img src="assets/mamba_othello.png" alt="a mamba playing Othello" width="300" height="300" alt="python mamba"/>
+    <img src="assets/mamba_othello.png" alt="a mamba playing Othello" width="27%"/>
 </p>
 
 <u>The repo features</u> :
@@ -18,7 +18,7 @@ It is designed to easily conduct the experiment from start to finish in separate
 Othello is a board game played on a 8x8 grid where two players compete to flip their opponent's pieces to their own color by trapping them between their own pieces.
 
 <p align="center">
-    <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="360" alt="python mamba"/>
+    <img src="assets/boards.png" alt="2 Othello boards" width="100%"/>
 </p>
 
 You can try playing it [here](https://www.eothello.com/).
@@ -34,7 +34,7 @@ Each game is encoded as the list of moves played by both player since the beginn
 Here is a diagram that shows the whole process :
 
 <p align="center">
-    <img src="assets/sumup.png" alt="diagram" width="1920" height="480" alt="python mamba"/>
+    <img src="assets/sumup.png" alt="diagram" width="100%"/>
 </p>
 
 <i>*The model represents the board as square which are empty, "mine" and "yours" and not empty, black and white***. To try to understand why, it's important to note that the model is trained to play both black and white moves (`0 15 8 42 2 58 14 ...` is composed of both black and white moves). Hence, this representation works for all the moves to predict because it is independent of which players is going to play. It's easier to work with than the black/white board representation.</i>
@@ -91,6 +91,26 @@ If you want to start from a pretrained model, please contact me and I will able 
 ## Results
 So, what about Mamba ?
 
+I trained 4 models : a 9M Mamba and a 11M Transformer, as well as a 17M Mamba and a 21M Transformer. <i>(although other models can be found on the wandb page)</i>
+
+First things first, here are the losses for each of these models :
+
+<p align="center">
+    <img src="assets/val_loss.png" alt="diagram" width="75%"/>
+</p>
+
+All runs use the same learning rate, batch size and the number of iterations is also the same (50K).
+
+training : legal move acc, loss
+
+probes res : tableau
+probes res : through layers
+
+reconstruction example
+
+not suprinsingly, the later boards are harder
+
+next steps : train longer, other sources (chess, and more...)...
 
 
 ## Learn more
