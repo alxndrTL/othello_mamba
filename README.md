@@ -99,18 +99,58 @@ First things first, here are the losses for each of these models :
     <img src="assets/val_loss.png" alt="diagram" width="75%"/>
 </p>
 
-All runs use the same learning rate, batch size and the number of iterations is also the same (50K).
+As you can see, the Mamba models are faster to train (data-wise) than the Transformers (about ~20% faster).
+All runs use the same learning rate and batch size, and the number of iterations is also the same (50K).
 
-training : legal move acc, loss
+How does this translate to our experiment ?
+Both architectures rapidly reaches a ~100% accuracy when predicting legal moves in Othello. (by step 3000, the legal move accuracy is above 95% for all models).
 
-probes res : tableau
-probes res : through layers
+For the probing accuracies, here are the results for these models :
 
-reconstruction example
+<p align="center">
+    <img src="assets/table.png" alt="diagram" width="75%"/>
+</p>
 
-not suprinsingly, the later boards are harder
+You can see that the lower loss reached by the Mamba models translates to a better accuracy - cell or board. The <b>cell accuracy</b> measures the proportion of cells/squares correctly classified, while the <b>board accuracy</b> measures the proportion of entire boards correctly classified. A board accuracy of 67% means that the probe of the Mamba 9M reconstructs perfectly 67% of the boards. While the previous works on OthelloGPT only tracked the cell accuracy, I find the board accuracy number to be more representative of the quality of the world model that each models computes.
 
-next steps : train longer, other sources (chess, and more...)...
+Here is the evolution of the board accuracy through training :
+
+<p align="center">
+    <img src="assets/boardacc_through_training.png" alt="diagram" width="50%"/>
+</p>
+
+We can try fitting a probe at different layers of ours models. Hence, we can track how the board representation is built, when it is used, and finally when it is discarded :
+
+<div style="text-align:center;">
+    <img src="assets/boardacc_through_layers_mamba.png" alt="mamba acc through layers" style="width: 48%;"/>
+    <img src="assets/boardacc_through_layers_transformer.png" alt="transformer acc through layers" style="width: 48%;"/>
+</div>
+
+We can see how the representation is progressevily built in the early layers (1->12 for Mamba, 1->5 for the Transformer), and then discarded in the final layers (14,15,16 for Mamba, 7,8 for the Transformer). Once the representation is built, the model uses it in the final layers to compute the next legal move to play. It is therefore not needed anymore in those layers.
+
+Here is an example of the reconstruction of a board :
+
+<p align="center">
+    <img src="assets/two_boards.png" alt="diagram" width="75%"/>
+</p>
+
+Again, it's important to remember that the model never has access to the board in itself, it just sees the list of moves since the beginning of the game.
+
+As one can imagine, the board gets more and more complicated as the game progesses. This is thus not suprising to see that the mean board accuracy evolves like this through the game :
+
+<p align="center">
+    <img src="assets/boardacc_through_game_stoic_lion.png" alt="diagram" width="50%"/>
+</p>
+
+The boards at the beginning of the game is very simple as it is composed of only a few pieces, while a late-game board is much harder to keep track of. Reconstructing the board from the list of moves is not something very easy (although of course it can be coded easily), compared to chess for example.
+
+To conclude, we see that the Mamba performances are on par and even a bit better than those of the Transformer. I think this experiment is interesting as it shows that the hidden state of Mamba is powerful enough to allow the computation of this representation.
+
+You can find all the models I trained for this project on the [wandb page](https://wandb.ai/alexandretl/othello).
+
+<b>The main next steps for this projet are :</b> 
+- train longer (especially the biggest models)
+- use other sources than Othello games (chess, and even more complex)... The original goal of this experiment is to show that the model learned "something" about the process that generated the input sequence (some kind of a world model). It would be intersting to see if this hypothesis holds for more complex examples.
 
 
 ## Learn more
@@ -122,3 +162,4 @@ next steps : train longer, other sources (chess, and more...)...
 ## TODOs:
 - intervention : "reverse" the probe to modify the internal representation of the model
 - adapt for chess
+- see main next steps in the Results section
