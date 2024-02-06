@@ -1,3 +1,13 @@
+"""
+Trains a probe given a load_dir (looks for a model.pth checkpoint in load_dir).
+The script also saves the probe (in load_dir/probe.pth), and records the accuracy (both square/cell accuracy and board accuracy) through training as well as at the end.
+
+You can modify some parameters at the top of the script.
+If you didn't change any directories and left as default in train.py and create_data_probing.py, you don't need to modify dir_activations and dir_boards.
+
+You can set the load_dir and layer via command line.
+"""
+
 import os
 import json
 import argparse
@@ -16,15 +26,15 @@ from eval import eval_probe_accuracy
 
 layer = 12
 load_dir = None # run directory
-dir_activations = None # if None, will default to load_dir/data_probing/layer_{layer}
-dir_boards = None # if None, will default to load_dir/data_probing
 
-save_dir = None # if None, will default to load_dir/probe_{layer}.pth
+dir_activations = None # will default to load_dir/data_probing/layer_{layer} if None
+dir_boards = None # will default to load_dir/data_probing if None
+save_dir = None # will default to load_dir/probe_{layer}.pth if None
 
 batch_size = 256
 num_iters = 50000
 
-n_games = 500 # number of games to compute acc
+n_games = 500 # number of games to compute final acc
 
 # probe training parameters
 lr = 1e-4

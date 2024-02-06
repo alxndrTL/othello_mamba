@@ -1,3 +1,10 @@
+"""
+Universal language model, which accepts as its core a Transformer or a Mamba.
+
+The Transformer is implemented in PyTorch and supports FlashAttention-2/
+For Mamba, you have the choice : use mamba.py's pure PyTorch implementation (cf mamba/mamba.py) or use the CUDA implementation.
+"""
+
 from typing import Union
 import inspect
 import math
@@ -56,6 +63,7 @@ class LM(nn.Module):
 
         return x
     
+    # taken from llama2.c
     def _init_weights(self, module):
         if isinstance(module, nn.Linear):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
@@ -64,6 +72,7 @@ class LM(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
+    # taken from llama2.c
     def configure_optimizers(self, weight_decay, learning_rate, betas, device_type):
         param_dict = {pn: p for pn, p in self.named_parameters()}
         param_dict = {pn: p for pn, p in param_dict.items() if p.requires_grad}

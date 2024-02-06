@@ -3,8 +3,11 @@ Convert all the pickles files (from the original Othello dataset) in {pickles_di
 - pad all the games to length 60 (with -1's)
 - ready to open with np.memmap() as np.int8
 
-A .bin file will thus be a 60*N vector (N is approx 100K, the number of games per file).
+A .bin file will thus be a 60*N array (N is approx. 100K, the number of games per file).
 Each game consists of a sequence of moves, each encoded from 0 to 63.
+
+The result of this script is already downloadable (see the README.md).
+So this file is really not important, I just kept it because it was used to generate the data I provide.
 """
 
 import os

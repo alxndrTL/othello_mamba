@@ -1,6 +1,13 @@
 """
-Evaluate an OthelloGPT or MambaGPT on the legality of its moves.
-It uses games sampled from {data_dir]/val. At each step of the game, the legality of the move predicted by the model is evaluated.
+This script provides two evaluate functions.
+All the evaluations sample new random Othello games.
+
+-eval_legal_moves : evaluates a base model on the legality of its moves. It uses games sampled from {data_dir]/val. 
+                    At each step of the game, the legality of the move predicted by the model is evaluated.
+                    The functions returns the legal move accuracy.
+-eval_probe_accuracy : evaluates a (model, probe). It provides 2 accuracy :
+                       cell accuracy, which is the proportion of cells which are correctly classified/predicted
+                       board accuracy, which is the proportion of boards which are correctly classified/predicted
 """
 
 import os
@@ -19,12 +26,15 @@ from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
 
 # todo : use LM inference function (and not forward)
+# (Transformer: KV cache, Mamba: inference which only carry along a hidden state and the last d_conv-1 inputs)
 
 def eval_legal_moves(model: nn.Module, device, n_games: int, sample: bool = False):
     """
     Returns the percentage of moves predicted by {model} which are legal.
     Plays {n_games}, and evaluate the accuracy.
+    """
 
+    """
     The -1's you see here are because the original tokenized moves are from -1 to 63 (-1 being the padding).
     We actually offset them by +1 (in data.py) because we can't feed -1 to an nn.Embedding.
     Hence, when communicating with our OthelloGame, we need to go back to the -1 to 63 range.
@@ -64,6 +74,10 @@ def eval_legal_moves(model: nn.Module, device, n_games: int, sample: bool = Fals
     return total_legal_moves/total_moves
 
 def eval_probe_accuracy(model: nn.Module, probe: nn.Module, layer: int, device, n_games: int):
+    """
+    Returns the cell and board accuracies of (model, probe), on newly sampled Othello games.
+    Plays {n_games}, and evaluate the accuracy.
+    """
     cell_acc = 0
     board_acc = 0
 
@@ -89,7 +103,7 @@ def eval_probe_accuracy(model: nn.Module, probe: nn.Module, layer: int, device, 
                 board[board == -1] = 2
             boards.append(board)
 
-        x = torch.tensor(moves)+1
+        x = torch.tensor(moves) + 1
         x = x.to(device).unsqueeze(0)
         activations = model.forward_up_to(x, layer) # (B=1, 59, d_model)
 

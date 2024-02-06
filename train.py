@@ -1,23 +1,22 @@
 """
 main training script.
 
-not implemented
+When launching the training, the script will assign a name to the run (same as wandb run if log_wandb is enabled).
+It will place the config, model and checkpoints in runs/{run_name} dir.
+The config file stores all hyperparams relative to the model (architecture, d_model, bias, n_heads if Transformer...).
+It is used by downstream scripts to load the model.
+
+not implemented:
 -gradient acc
 -multiple gpus (DDP)
--checkpoint saving during training
--save for HF (model_export dans llama2.c/train.py ????)
--training from a checkpoint : it works, but lr must be manually set to cst=lr_min
-
-todo : 
--flops util (in final log)
--weight decay different pour certains params
--mamba en float32 : attention ! justement, garder les .float() ? regarder le code officiel
+-save for HF
+-training from a checkpoint : it works, but lr must be manually set to cst=lr_min, and wandb logging is restarted
+-flops utilization
 
 Notes :
 -given the same d_model, Mamba should use 2x more layers than a Transformer to match its number of params
-(its not actually deeper than the Transformer, it's just that the definition of a layer is not the same in the 2 models)
--for Transformer on A100 80GB (d_model=512, n_layers=8, n_heads=8, batch_size=256), 30,000 steps = 18 min
-
+(its not actually deeper than the Transformer, it's just that the definition of a layer is not the same in the 2 architectures)
+-for a Transformer on A100 80GB (d_model=512, n_layers=8, n_heads=8, batch_size=256), 30,000 steps = 18 min
 """
 
 import os
@@ -44,12 +43,12 @@ from eval import eval_legal_moves
 
 # model parameters
 architecture = "Transformer" # Transformer or Mamba
-d_model = 512
+d_model = 288
 n_layers = 8
 bias = False
 
 # Mamba specific
-use_cuda = True # choose True if you can (mamba-ssm installed)
+use_cuda = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
 
 # Transformer specific
 n_heads = 6
@@ -57,11 +56,11 @@ dropout = 0.
 use_flash_attention = True
 
 # training parameters
-num_iters = 20000 # 1000 = 0.6 min
+num_iters = 50000
 batch_size = 256
 
 lr = 1e-3
-lr_min = 1e-4 # as in Mamba paper and Chinchilla
+lr_min = 4e-5 # as in Mamba paper and Chinchilla
 lr_warmup_iters = 100
 lr_decay_iters = num_iters # num_iters as in Chinchilla
 
@@ -82,6 +81,9 @@ load_dir = "" # where to load from (if load_checkpoint is set)
 save_dir = "runs/" # where to save to (ignored if load_checkpoint is set)
 
 data_dir = "data/"
+
+#checkpointing parameters
+ckpt_interval = 10000
 
 # logging parameters
 log_wandb = False
@@ -170,10 +172,14 @@ elif architecture == "Mamba":
 else:
     raise NotImplementedError
 
+# vocab_size being equal to 65 is a vestigial feature
+# it should actually be 60 (moves) + 1 (padding) = 61
+# (60 moves because the four center moves are never used as every game start with the same 4 pieces at center)
+# but the OthelloGame from the original OthelloGPT recorded the 64 moves, so OthelloGame from othello.py here also do that
+# in short, 4 tokens are never used
 model = LM(config, vocab_size=65).to(device)
-#optim = torch.optim.AdamW(model.parameters(), lr=lr, betas=(adam_b1, adam_b2), weight_decay=weight_decay)
-optim = model.configure_optimizers(weight_decay, lr, (adam_b1, adam_b2), device_type)
-scaler = torch.cuda.amp.GradScaler(enabled=(dtype=="float16"))
+optim = model.configure_optimizers(weight_decay, lr, (adam_b1, adam_b2), device_type) # AdamW optim with weight_decay except for 1D params (biases, norms)
+scaler = torch.cuda.amp.GradScaler(enabled=(dtype=="float16")) # needed when training with float16
 
 print(f"Model initialized. Number of parameters : {sum([p.numel() for p in model.parameters()])}.")
 
@@ -203,7 +209,7 @@ if load_checkpoint:
     checkpoint = None
     print(f"Successfully loaded checkpoint from {load_dir}.")
 
-unoptimized_model = model
+unoptimized_model = model # the unoptimized model is kept for saving
 if use_torch_compile:
     print("Compiling the model...")
     model = torch.compile(model)
@@ -279,12 +285,11 @@ for iter, data in enumerate(loader):
         if log_wandb:
             wandb.log(to_log, step=iter)
 
-    """
-    if iter%20000==0:
+    # checkpointing
+    if iter % ckpt_interval == 0:
         os.makedirs(os.path.join(save_dir, f"ckpt_{iter}/"), exist_ok=True)
         checkpoint = {"model": unoptimized_model.state_dict()}
         torch.save(checkpoint, os.path.join(save_dir, f"ckpt_{iter}/model.pth"))
-    """
 
     if iter >= num_iters:
         break
@@ -292,7 +297,7 @@ for iter, data in enumerate(loader):
 end_time = time.time()
 print(f"Training is done. Took {(end_time-start_time)/60:.2f} minutes.")
 
-# saving : config + model checkpoint
+# saving : config + model checkpoint (model+optim+scaler)
 config_dict = asdict(config)
 
 if isinstance(config, TransformerConfig):
@@ -316,7 +321,7 @@ final_acc = eval_legal_moves(unoptimized_model, device, 50)
 model.train()
 print(f"Final accuracy: {100.*final_acc:.2f}%")
 
-# final log
+# final logging (some metrics for wandb)
 num_params = sum([p.numel() for p in model.parameters()])
 num_tokens_processed = num_iters * batch_size * 60
 

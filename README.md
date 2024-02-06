@@ -5,9 +5,17 @@ This repo provides the code to implement the famous ["OthelloGPT" experiment](ht
     <img src="assets/mamba_othello.png" alt="a mamba playing Othello" width="300" height="300" alt="python mamba"/>
 </p>
 
-Othello is a board game played on a 8x8 grid where two players compete to flip their opponent's pieces to their own color by trapping them between their own pieces.
+<u>The repo features</u> :
+- a training script `train.py`, which trains a model that predicts legal moves in Othello.
+- the model trained can then be used to train a probe on top of it, with `create_data_probing.py` and `train_probe.py`.
+- the Transformer backend can be pure PyTorch or can use FlashAttention-2 (torch compile compatible). The Mamba backend can either be [mamba.py](https://github.com/alxndrTL/mamba.py) or the [official CUDA implementation](https://github.com/state-spaces/mamba).
 
-// image othello
+It is a complete reimplementation of the [original repo](https://github.com/likenneth/othello_world).
+It is designed to easily conduct the experiment from start to finish in separate and well-defined files : `train.py`, `create_data_probing.py` and `train_probe.py`. The `train.py` script creates a folder which is reused by downstream scripts, so you don't have to worry about carrying along model-specific hyperparameters.
+
+## What is OthelloGPT ?
+
+Othello is a board game played on a 8x8 grid where two players compete to flip their opponent's pieces to their own color by trapping them between their own pieces.
 
 <p align="center">
     <img src="assets/boards.png" alt="2 Othello boards" width="1387" height="370" alt="python mamba"/>
@@ -24,7 +32,6 @@ Each game is encoded as the list of moves played by both player since the beginn
 <b>2) </b> Then, we train a probe (a linear layer) from couples (activations, board state). This data is collected by sampling random Othello games, and by feeding the context of moves to the model and collecting the activations at a given layer, as well as the true state of the board. The simpler the probe, the better, as simple probes can only "translate" the features computed by the model and can't actually compute these features themselves, as opposed to more powerful probes (MLPs). The probes (one probe per square) are trained like in any classification task, with the number of classes being 3 (empty, mine and yours*).
 
 Here is a diagram that shows the whole process :
-
 
 <p align="center">
     <img src="assets/sumup.png" alt="diagram" width="1920" height="500" alt="python mamba"/>

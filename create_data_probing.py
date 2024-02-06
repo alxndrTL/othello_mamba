@@ -1,3 +1,12 @@
+"""
+This script creates the data used by train_probe.py to train a probe given a model.
+
+You can modify some parameters at the top of the script.
+If you didn't change any directories and left as default in train.py, you don't need to modify save_dir not data_dir.
+
+You can set the load_dir and layer via command line.
+"""
+
 import os
 import json
 import argparse
@@ -14,11 +23,12 @@ from models.lm import LM
 
 # -------------------------------------------------------
 
-total_games = 10000
-batch_size = 96 # each file will contain batch_size games
 layer = 12 # from 1 to n_layers
 load_dir = None # run directory
-save_dir = None # if None : will default to load_dir/data_probing
+
+total_games = 10000
+batch_size = 128 # each file will contain batch_size games (the larger the less files but beware of OOM!)
+save_dir = None # will default to load_dir/data_probing if None
 data_dir = "data/val"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -114,20 +124,22 @@ for i, data in enumerate(loader_val):
             move = game_transcript[t].item() - 1
             if move == -1:
                 # move is -1 when we encounter a game that was padded (ended before the whole board is complete with pieces)
-                # we put -100 for all pieces (it will be the ignore_index of the CE loss in the next training step)
+                # we put -100 for all pieces (it will be the ignore_index of the CE loss in the next training step (train_probe.py))
                 boards[k, t] = -100 * np.ones((8*8,), dtype=np.int32)
             else:
                 game.play_move(game_transcript[t].item() - 1)
                 board = np.copy(game.state).flatten()
 
-                # board : (64,) avec 0's (empty), -1 (white), 1 (black)
-                # game.next_hand_color : -1 (white) ou 1 (black)
+                # board : (64,) with 0's (empty), -1 (white), 1 (black)
+                # game.next_hand_color : -1 (white) or 1 (black)
 
-                # si next_hand_color est -1 : on remplace les 1 par des 2, puis les -1 par des 1
-                # si next_hand_color est 1 : on remplace les -1 par des 2
+                # if next_hand_color is -1 : we replace 1s by 2s, then -1s by 1s
+                # if next_hand_color is 1 : we replace -1s by 2s
 
-                # pour avoir :
-                # board : (64,) avec 0's (empty), 1 (same color as next turn), 2 (diff color as next turn)
+                # to get :
+                # board : (64,) with 0's (empty), 1 (same color as next turn), 2 (diff color as next turn)
+                # this makes it so that a linear probe is able to extract the model's representation of the board
+                # (which has cells of the type "mine" and "yours" rather than "black" and "white", see README)
 
                 if game.next_hand_color == -1:
                     board[board == 1] = 2
