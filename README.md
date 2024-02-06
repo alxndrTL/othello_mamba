@@ -153,6 +153,7 @@ You can find all the models I trained for this project on the [wandb page](https
 - train longer (especially the biggest models)
 - use other sources than Othello games (chess, and even more complex)... The original goal of this experiment is to show that the model learned "something" about the process that generated the input sequence (some kind of a world model). It would be intersting to see if this hypothesis holds for more complex examples.
 
+<i>Note that the training of Mamba was particulary long (although I used the official CUDA implementation). From some benchmarks I did on the A100 80GB, it was 7.6 longer than a Transformer of the same size. (`d_model=408`, `n_layers=8` for Transformer and `16` for Mamba, `batch_size=256`, `L=60`). Interestingly, turning the `batch_size` from `256` to `64` made Mamba "only" 3 times slower than the Transformer. This is something to investigate.</i>
 
 ## Learn more
 - the first experiments were proposed in [Emergent World Representations: Exploring a Sequence Model Trained on a Synthetic Task](https://arxiv.org/abs/2210.13382). Li et al. successfully trained a GPT to output legal moves, and trained a (non-linear) probe to extract its representation of the board. However, the probe they trained was tasked to tell if a given square is empty, black or white given the model's activations. ([blog post](https://thegradient.pub/othello/), [code](https://github.com/likenneth/othello_world))
