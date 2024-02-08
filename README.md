@@ -129,6 +129,8 @@ We can try fitting a probe at different layers of ours models. Hence, we can tra
 
 We can see how the representation is progressevily built in the early layers (1->12 for Mamba, 1->5 for the Transformer), and then discarded in the final layers (14,15,16 for Mamba, 7,8 for the Transformer). Once the representation is built, the model uses it in the final layers to compute the next legal move to play. It is therefore not needed anymore in those layers.
 
+<i>Note : one probe was trained for each layer, although @NeelNanda5 suggested that a probe trained on one layer can be applied to another layer without too much performance loss. (not tested here)</i>
+
 Here is an example of the reconstruction of a board :
 
 <p align="center">
