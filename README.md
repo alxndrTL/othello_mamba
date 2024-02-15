@@ -167,3 +167,18 @@ You can find all the models I trained for this project on the [wandb page](https
 - intervention : "reverse" the probe to modify the internal representation of the model
 - adapt for chess
 - see main next steps in the Results section
+
+
+## Citation
+
+If you find this project useful in your research and wish to cite it, please use the following BibTex entry:
+
+```
+@software{othello_mamba,
+  author = {Alexandre Torres},
+  title = {{Othello Mamba}: Evaluating the Mamba architecture on the OthelloGPT experiment},
+  url = {https://github.com/alxndrTL/othello_mamba},
+  version = {1.0},
+  year = {2024},
+}
+```
