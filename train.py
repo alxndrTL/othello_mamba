@@ -37,6 +37,7 @@ import wandb
 from models.lm import LM
 from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
+from models.mamba.jamba import JambaConfig
 from data import OthelloDataset
 from eval import eval_legal_moves
 
@@ -47,6 +48,23 @@ architecture = "Transformer" # Transformer or Mamba
 d_model = 288
 n_layers = 8
 bias = False
+
+# Jamba specific
+mlp_size = 864
+inner_layernorms = True # not compatible with use_cuda
+
+num_attn_heads = 6
+num_key_value_heads = 6
+
+num_experts = 1
+num_experts_per_tok = 1
+
+attn_layer_offset = 1
+attn_layer_period = 2
+expert_layer_offset = 1
+expert_layer_period = 2
+
+use_cuda = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
 
 # Mamba specific
 use_cuda = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
@@ -121,6 +139,16 @@ if log_wandb:
                 "adam_b2": adam_b2,
                 "clip_value_grad": clip_value_grad,
                 "weight_decay": weight_decay,
+                "mlp_size": mlp_size,
+                "inner_layernorms": inner_layernorms,
+                "num_attn_heads": num_attn_heads,
+                "num_key_value_heads": num_key_value_heads,
+                "num_experts": num_experts,
+                "num_experts_per_tok": num_experts_per_tok,
+                "attn_layer_offset": attn_layer_offset,
+                "attn_layer_period": attn_layer_period,
+                "expert_layer_offset": expert_layer_offset,
+                "expert_layer_period": expert_layer_period,
             })
 
 if log_wandb:
@@ -170,6 +198,12 @@ if architecture == "Transformer":
     config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
 elif architecture == "Mamba":
     config = MambaConfig(d_model=d_model, n_layers=n_layers, use_cuda=use_cuda)
+elif architecture == "Jamba":
+    config = JambaConfig(d_model=d_model, n_layers=n_layers, mlp_size=mlp_size, inner_layernorms=inner_layernorms,
+                         num_attention_heads=num_attn_heads, num_key_value_heads=num_key_value_heads, 
+                         num_experts=num_experts, num_experts_per_tok=num_experts_per_tok,
+                         attn_layer_offset=attn_layer_offset, attn_layer_period=attn_layer_period,
+                         expert_layer_offset=expert_layer_offset, expert_layer_period=expert_layer_period, use_cuda=use_cuda)
 else:
     raise NotImplementedError
 

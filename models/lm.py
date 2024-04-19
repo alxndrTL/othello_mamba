@@ -14,6 +14,7 @@ import torch.nn as nn
 
 from models.transformer.transformer import Transformer, TransformerConfig, RMSNorm
 from models.mamba.mamba import Mamba, MambaConfig
+from models.mamba.jamba import Jamba, JambaConfig
 
 # todo : inference function, with no grad, with kv cache for transformer, step() for mamba
 
@@ -27,8 +28,12 @@ class LM(nn.Module):
         
         if isinstance(self.config, TransformerConfig):
             self.core = Transformer(self.config)
-        else:
+        elif isinstance(self.config, MambaConfig):
             self.core = Mamba(self.config)
+        elif isinstance(self.config, JambaConfig):
+            self.core = Jamba(self.config)
+        else:
+            raise NotImplementedError
 
         self.out_norm = RMSNorm(self.config.d_model, self.config.norm_eps)
 
