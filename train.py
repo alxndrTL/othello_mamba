@@ -44,14 +44,14 @@ from eval import eval_legal_moves
 # -------------------------------------------------------
 
 # model parameters
-architecture = "Transformer" # Transformer or Mamba
+architecture = "Jamba" # Transformer or Mamba
 d_model = 288
 n_layers = 8
 bias = False
 
 # Jamba specific
 mlp_size = 864
-inner_layernorms = True # not compatible with use_cuda
+inner_layernorms = False # not compatible with use_cuda
 
 num_attn_heads = 6
 num_key_value_heads = 6
@@ -59,8 +59,8 @@ num_key_value_heads = 6
 num_experts = 1
 num_experts_per_tok = 1
 
-attn_layer_offset = 1
-attn_layer_period = 2
+attn_layer_offset = 8
+attn_layer_period = 200
 expert_layer_offset = 1
 expert_layer_period = 2
 
@@ -105,7 +105,7 @@ data_dir = "data/"
 ckpt_interval = 10000
 
 # logging parameters
-log_wandb = False
+log_wandb = True
 
 train_log_interval = 50
 eval_acc_interval = 1000

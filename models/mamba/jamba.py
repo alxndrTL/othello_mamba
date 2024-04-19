@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from mamba import MambaConfig, MambaBlock, RMSNorm
+from models.mamba.mamba import MambaConfig, MambaBlock, RMSNorm
 
 @dataclass
 class JambaConfig:

@@ -35,7 +35,7 @@ class LM(nn.Module):
         else:
             raise NotImplementedError
 
-        self.out_norm = RMSNorm(self.config.d_model, self.config.norm_eps)
+        self.out_norm = RMSNorm(self.config.d_model, self.config.rms_norm_eps)
 
         self.lm_head = nn.Linear(self.config.d_model, vocab_size, bias=False)
         self.lm_head.weight = self.embedding.weight

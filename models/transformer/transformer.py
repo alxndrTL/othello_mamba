@@ -13,7 +13,7 @@ class TransformerConfig:
     max_len: int # maximum sequence length (for positional embedding)
     dropout: float = 0.1
     bias: bool = False
-    norm_eps: float = 1e-5
+    rms_norm_eps: float = 1e-5
 
     flash: bool = True
 
@@ -57,9 +57,9 @@ class DecoderLayer(nn.Module):
 
         self.config = config
 
-        self.attention_norm = RMSNorm(config.d_model, config.norm_eps)
+        self.attention_norm = RMSNorm(config.d_model, config.rms_norm_eps)
         self.sa = SelfAttentionMultiHead(config)
-        self.mlp_norm = RMSNorm(config.d_model, config.norm_eps)
+        self.mlp_norm = RMSNorm(config.d_model, config.rms_norm_eps)
         self.mlp = MLP(config)
         
     def forward(self, X):
