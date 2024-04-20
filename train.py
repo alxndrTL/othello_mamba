@@ -38,6 +38,8 @@ from models.lm import LM
 from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
 from models.mamba.jamba import JambaConfig
+from models.configuration_jamba import JambaConfig as JambaConfig_hf
+
 from data import OthelloDataset
 from eval import eval_legal_moves
 
@@ -204,6 +206,11 @@ elif architecture == "Jamba":
                          num_experts=num_experts, num_experts_per_tok=num_experts_per_tok,
                          attn_layer_offset=attn_layer_offset, attn_layer_period=attn_layer_period,
                          expert_layer_offset=expert_layer_offset, expert_layer_period=expert_layer_period, use_cuda=use_cuda)
+elif architecture == "Jamba_hf":
+    config = JambaConfig_hf(vocab_size=65, hidden_size=d_model, intermediate_size=mlp_size, num_hidden_layers=n_layers,
+                            num_attention_heads=num_attn_heads, num_key_value_heads=num_key_value_heads, use_cache=False, n_ctx=100,
+                            num_experts_per_tok=num_experts_per_tok, num_experts=num_experts, expert_layer_offset=1, expert_layer_period=2,
+                            attn_layer_offset=1, attn_layer_period=2, use_mamba_kernels=True)
 else:
     raise NotImplementedError
 

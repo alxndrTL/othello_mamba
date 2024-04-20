@@ -16,7 +16,10 @@ from models.transformer.transformer import Transformer, TransformerConfig, RMSNo
 from models.mamba.mamba import Mamba, MambaConfig
 from models.mamba.jamba import Jamba, JambaConfig
 
-# todo : inference function, with no grad, with kv cache for transformer, step() for mamba
+from models.configuration_jamba import JambaConfig as JambaConfig_hf
+from models.modeling_jamba import JambaModel
+
+# todo : inference function, with no grad, with kv cache for transformer, step() for mamba (see mamba.py/jamba.py)
 
 class LM(nn.Module):
     def __init__(self, model_config: Union[TransformerConfig, MambaConfig], vocab_size: int):
@@ -32,6 +35,8 @@ class LM(nn.Module):
             self.core = Mamba(self.config)
         elif isinstance(self.config, JambaConfig):
             self.core = Jamba(self.config)
+        elif isinstance(self.config, JambaConfig_hf):
+            self.core = JambaModel(self.config)
         else:
             raise NotImplementedError
 
