@@ -33,9 +33,8 @@ class JambaConfig:
     dt_init_floor = 1e-4
     bias: bool = False
     conv_bias: bool = True
-    inner_layernorms: bool = False
-
-    use_cuda: bool = False # if True, use mamba_ssm by Albert Gu and Tri Dao. if False, fallsback to mamba.py
+    inner_layernorms: bool = True
+    use_cuda: bool = False # if True, use mamba_ssm by Albert Gu and Tri Dao. If False, fallsback to mamba.py
     pscan: bool = True # use parallel scan mode or sequential mode when training
 
     # attention related
@@ -59,9 +58,11 @@ class JambaConfig:
         if self.dt_rank == 'auto':
             self.dt_rank = math.ceil(self.d_model / 16)
 
-        self.mamba_config = MambaConfig(self.d_model, 0, self.dt_rank, self.d_state, self.expand_factor,
-                                        self.d_conv, self.dt_min, self.dt_max, self.dt_init, self.dt_scale, self.rms_norm_eps,
-                                        self.bias, self.conv_bias, self.inner_layernorms, self.pscan)
+        self.mamba_config = MambaConfig(d_model=self.d_model, n_layers=0, dt_rank=self.dt_rank, d_state=self.d_state,
+                                        expand_factor=self.expand_factor, d_conv=self.d_conv, dt_min=self.dt_min, dt_max=self.dt_max,
+                                        dt_init=self.dt_init, dt_scale=self.dt_scale, rms_norm_eps=self.rms_norm_eps,
+                                        bias=self.bias, conv_bias=self.conv_bias, inner_layernorms=self.inner_layernorms,
+                                        pscan=self.pscan, use_cuda=self.use_cuda)
 
 class Jamba(nn.Module):
     def __init__(self, config: JambaConfig):
@@ -216,11 +217,7 @@ class MambaLayer(nn.Module):
 
         self.config = config
 
-        if config.use_cuda:
-            from mamba_ssm import Mamba as MambaBlockCuda
-            self.mamba = MambaBlockCuda(d_model=config.d_model)
-        else:
-            self.mamba = MambaBlock(config=config.mamba_config)
+        self.mamba = MambaBlock(config=config.mamba_config)
 
         num_experts_per_tok = config.num_experts_per_tok if num_experts > 1 else 1
         self.moe = SparseMoEBlock(config, num_experts=num_experts, num_experts_per_tok=num_experts_per_tok)
