@@ -53,7 +53,7 @@ bias = False
 
 # Jamba specific
 mlp_size = 864
-inner_layernorms = True # not compatible with use_cuda
+inner_layernorms = True # not compatible with use_cuda_jamba
 
 num_attn_heads = 6
 num_key_value_heads = 6
@@ -66,10 +66,10 @@ attn_layer_period = 2
 expert_layer_offset = 1
 expert_layer_period = 2
 
-use_cuda = False # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
+use_cuda_jamba = False # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
 
 # Mamba specific
-use_cuda = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
+use_cuda_mamba = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
 
 # Transformer specific
 n_heads = 6
@@ -91,10 +91,10 @@ adam_b2 = 0.95
 clip_value_grad = 1.0
 weight_decay = 0.1
 
-use_torch_compile = True # do not toggle if using Mamba
+use_torch_compile = False # do not toggle if using Mamba
 
 device = "cuda" # cpu, cuda:0, cuda:1, ...
-dtype = "float32" # float32, float16 or bfloat16 (float16 will use a GradScaler)
+dtype = "bfloat16" # float32, float16 or bfloat16 (float16 will use a GradScaler)
 
 load_checkpoint = False
 load_dir = "" # where to load from (if load_checkpoint is set)
@@ -199,13 +199,13 @@ iter_val = iter(loader_val)
 if architecture == "Transformer":
     config = TransformerConfig(d_model=d_model, n_layers=n_layers, n_heads=n_heads, dropout=dropout, bias=bias, max_len=60, flash=use_flash_attention)
 elif architecture == "Mamba":
-    config = MambaConfig(d_model=d_model, n_layers=n_layers, use_cuda=use_cuda)
+    config = MambaConfig(d_model=d_model, n_layers=n_layers, use_cuda=use_cuda_mamba)
 elif architecture == "Jamba":
     config = JambaConfig(d_model=d_model, n_layers=n_layers, mlp_size=mlp_size, inner_layernorms=inner_layernorms,
                          num_attention_heads=num_attn_heads, num_key_value_heads=num_key_value_heads, 
                          num_experts=num_experts, num_experts_per_tok=num_experts_per_tok,
                          attn_layer_offset=attn_layer_offset, attn_layer_period=attn_layer_period,
-                         expert_layer_offset=expert_layer_offset, expert_layer_period=expert_layer_period, use_cuda=use_cuda)
+                         expert_layer_offset=expert_layer_offset, expert_layer_period=expert_layer_period, use_cuda=use_cuda_jamba)
 elif architecture == "Jamba_hf":
     config = JambaConfig_hf(vocab_size=65, hidden_size=d_model, intermediate_size=mlp_size, num_hidden_layers=n_layers,
                             num_attention_heads=num_attn_heads, num_key_value_heads=num_key_value_heads, use_cache=False, n_ctx=100,
