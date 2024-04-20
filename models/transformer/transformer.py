@@ -134,15 +134,14 @@ class SelfAttentionMultiHead(nn.Module):
 
         return y
 
-class RMSNorm(torch.nn.Module):
-    def __init__(self, dim: int, eps: float):
+class RMSNorm(nn.Module):
+    def __init__(self, d_model: int, eps: float = 1e-5):
         super().__init__()
-        self.eps = eps
-        self.weight = nn.Parameter(torch.ones(dim))
 
-    def _norm(self, x):
-        return x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps)
+        self.eps = eps
+        self.weight = nn.Parameter(torch.ones(d_model))
 
     def forward(self, x):
-        output = self._norm(x.float()).type_as(x)
-        return output * self.weight
+        output = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
+
+        return output
