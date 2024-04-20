@@ -53,7 +53,7 @@ bias = False
 
 # Jamba specific
 mlp_size = 864
-inner_layernorms = False # not compatible with use_cuda
+inner_layernorms = True # not compatible with use_cuda
 
 num_attn_heads = 6
 num_key_value_heads = 6
@@ -61,12 +61,12 @@ num_key_value_heads = 6
 num_experts = 1
 num_experts_per_tok = 1
 
-attn_layer_offset = 8
-attn_layer_period = 200
+attn_layer_offset = 1
+attn_layer_period = 2
 expert_layer_offset = 1
 expert_layer_period = 2
 
-use_cuda = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
+use_cuda = False # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
 
 # Mamba specific
 use_cuda = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
@@ -94,7 +94,7 @@ weight_decay = 0.1
 use_torch_compile = True # do not toggle if using Mamba
 
 device = "cuda" # cpu, cuda:0, cuda:1, ...
-dtype = "bfloat16" # float32, float16 or bfloat16 (float16 will use a GradScaler)
+dtype = "float32" # float32, float16 or bfloat16 (float16 will use a GradScaler)
 
 load_checkpoint = False
 load_dir = "" # where to load from (if load_checkpoint is set)
@@ -210,7 +210,7 @@ elif architecture == "Jamba_hf":
     config = JambaConfig_hf(vocab_size=65, hidden_size=d_model, intermediate_size=mlp_size, num_hidden_layers=n_layers,
                             num_attention_heads=num_attn_heads, num_key_value_heads=num_key_value_heads, use_cache=False, n_ctx=100,
                             num_experts_per_tok=num_experts_per_tok, num_experts=num_experts, expert_layer_offset=1, expert_layer_period=2,
-                            attn_layer_offset=1, attn_layer_period=2, use_mamba_kernels=True)
+                            attn_layer_offset=attn_layer_offset, attn_layer_period=attn_layer_period, use_mamba_kernels=True)
 else:
     raise NotImplementedError
 

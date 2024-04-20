@@ -1752,7 +1752,7 @@ class JambaModel(JambaPreTrainedModel):
             if output_router_logits:
                 all_router_logits += (layer_outputs[-1],)
 
-        hidden_states = self.final_layernorm(hidden_states)
+        #hidden_states = self.final_layernorm(hidden_states)
 
         # add hidden states from the last decoder layer
         if output_hidden_states:

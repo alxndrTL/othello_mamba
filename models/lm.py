@@ -22,12 +22,13 @@ from models.modeling_jamba import JambaModel
 # todo : inference function, with no grad, with kv cache for transformer, step() for mamba (see mamba.py/jamba.py)
 
 class LM(nn.Module):
-    def __init__(self, model_config: Union[TransformerConfig, MambaConfig], vocab_size: int):
+    def __init__(self, model_config: Union[TransformerConfig, MambaConfig, JambaConfig], vocab_size: int):
         super().__init__()
 
         self.config = model_config
 
         self.embedding = nn.Embedding(vocab_size, self.config.d_model, padding_idx=0)
+        #self.embedding = nn.Embedding(vocab_size, self.config.hidden_size, padding_idx=0)
         
         if isinstance(self.config, TransformerConfig):
             self.core = Transformer(self.config)
@@ -41,8 +42,10 @@ class LM(nn.Module):
             raise NotImplementedError
 
         self.out_norm = RMSNorm(self.config.d_model, self.config.rms_norm_eps)
+        #self.out_norm = RMSNorm(self.config.hidden_size, self.config.rms_norm_eps)
 
         self.lm_head = nn.Linear(self.config.d_model, vocab_size, bias=False)
+        #self.lm_head = nn.Linear(self.config.hidden_size, vocab_size, bias=False)
         self.lm_head.weight = self.embedding.weight
 
         self.apply(self._init_weights)
@@ -57,6 +60,7 @@ class LM(nn.Module):
 
         x = self.embedding(tokens)
         x = self.core(x)
+        #x = self.core(inputs_embeds=x).last_hidden_state
         x = self.out_norm(x)
         logits = self.lm_head(x)
 
