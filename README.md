@@ -1,5 +1,5 @@
 # Evaluating the Mamba architecture on the Othello game
-This repo provides the code to implement the famous ["OthelloGPT" experiment](https://thegradient.pub/othello/) with the Mamba and Transformer architectures. It should be hackable enough to be modified to your needs - eg. replace Othello with chess.
+This repo provides the code to implement the famous ["OthelloGPT" experiment](https://thegradient.pub/othello/) with the Mamba,  Transformer and Jamba architectures. It should be hackable enough to be modified to your needs - eg. replace Othello with chess.
 
 <p align="center">
     <img src="assets/mamba_othello.png" alt="a mamba playing Othello" width="35%"/>
@@ -50,7 +50,7 @@ Note that this experiment seems to confirm this hypothesis only on a simple toy 
 The main contribution of this repo is to provide a <b>simple, clean and hackable implementation of the OthelloGPT experiment</b>, designed to be compatible with multiple architectures, and with little effort, other sources of data (eg. chess or something more sophisticated).
 
 ## Getting started
-With this repo, you can train your own model (Transformer or Mamba) that predicts legal moves in Othello. Then, you can train a probe that to extract the board state from the activations of your trained model.
+With this repo, you can train your own model (Transformer, Mamba or Jamba) that predicts legal moves in Othello. Then, you can train a probe that to extract the board state from the activations of your trained model.
 
 First, clone the repo :
 ```
@@ -88,17 +88,19 @@ python train_probe.py --load_dir=runs/{run_name} # should take a few minutes on
 
 Please check the files `train.py`, `create_data_probing.py`, `train_probe` for hyperparameters.
 
-If you want to start from a pretrained model, please contact me and I will able to send you pretrained models via HF.
+If you want to start from a pretrained model, please contact me and I will be able to send you pretrained models via HF.
 
 ## Results
 So, what about Mamba ?
 
-I trained 4 models : a 9M Mamba and a 11M Transformer, as well as a 17M Mamba and a 21M Transformer. <i>(although other models can be found on the wandb page)</i>
+I trained 5 models : a 9M Mamba, a 9.5M Jamba and a 11M Transformer, as well as a 17M Mamba and a 21M Transformer. The Jamba 9.5M interleaves one Mamba layer with one attention layer. 
+
+<i>(other models can be found on the wandb page)</i>
 
 First things first, here are the losses for each of these models :
 
 <p align="center">
-    <img src="assets/val_loss_comp.png" alt="diagram" width="100%"/>
+    <img src="assets/val_loss.png" alt="diagram" width="100%"/>
 </p>
 
 As you can see, the Mamba models are faster to train (data-wise) than the Transformers (about ~20% faster).
@@ -165,6 +167,7 @@ You can find all the models I trained for this project on the [wandb page](https
 - more recently, Hazineh et al. reproduced the above experiments in [Linear Latent World Models in Simple Transformers: A Case Study on Othello-GPT](https://arxiv.org/abs/2310.07582), with a focus on intervention and shallow models.
 
 ## TODOs:
+- Jamba : test other attention-to-mamba-layers ratios
 - intervention : "reverse" the probe to modify the internal representation of the model
 - adapt for chess
 - see main next steps in the Results section
