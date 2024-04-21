@@ -4,7 +4,8 @@ This script creates the data used by train_probe.py to train a probe given a mod
 You can modify some parameters at the top of the script.
 If you didn't change any directories and left as default in train.py, you don't need to modify save_dir not data_dir.
 
-You can set the load_dir and layer via command line.
+You can also set the load_dir and layer via command line when launching the script :
+python create_data_probing.py --load_dir=runs/celestial-frog-68 --layer=6
 """
 
 import os
@@ -17,14 +18,16 @@ import torch
 
 from data import OthelloDataset
 from othello import OthelloGame
+
+from models.lm import LM
 from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
-from models.lm import LM
+from models.mamba.jamba import JambaConfig
 
 # -------------------------------------------------------
 
-layer = 12 # from 1 to n_layers
-load_dir = None # run directory
+layer = None # from 1 to n_layers
+load_dir = "" # run directory
 
 total_games = 10000
 batch_size = 128 # each file will contain batch_size games (the larger the less files but beware of OOM!)
@@ -63,6 +66,8 @@ if architecture == "Transformer":
     config = TransformerConfig(**config_json)
 elif architecture == "Mamba":
     config = MambaConfig(**config_json)
+elif architecture == "Jamba":
+    config = JambaConfig(**config_json)
 else:
     raise NotImplementedError
 

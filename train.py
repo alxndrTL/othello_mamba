@@ -18,6 +18,9 @@ Notes :
 -given the same d_model, Mamba should use 2x more layers than a Transformer to match its number of params
 (its not actually deeper than the Transformer, it's just that the definition of a layer is not the same in the 2 architectures)
 -for a Transformer on A100 80GB (d_model=512, n_layers=8, n_heads=8, batch_size=256), 30,000 steps = 18 min
+-if using use_cuda_jamba, you must train in float32. If not, the following error is triggered : 
+"Expected B.scalar_type() == (!is_variable_B ? weight_type : input_type) to be true, but got false."
+when calling the selective_scan_fn function. Not clear why this error shows up when in (b)float16. TODO: investigate.
 """
 
 import os
@@ -38,7 +41,6 @@ from models.lm import LM
 from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
 from models.mamba.jamba import JambaConfig
-from models.configuration_jamba import JambaConfig as JambaConfig_hf
 
 from data import OthelloDataset
 from eval import eval_legal_moves
@@ -46,14 +48,14 @@ from eval import eval_legal_moves
 # -------------------------------------------------------
 
 # model parameters
-architecture = "Jamba" # Transformer or Mamba
+architecture = "Jamba" # Mamba, Transformer or Jamba (a little bit of both)
 d_model = 288
 n_layers = 8
 bias = False
 
 # Jamba specific
 mlp_size = 864
-inner_layernorms = True # not compatible with use_cuda_jamba
+inner_layernorms = True # you usually want it toggled to have a smooth loss
 
 num_attn_heads = 6
 num_key_value_heads = 6
@@ -66,10 +68,10 @@ attn_layer_period = 2
 expert_layer_offset = 1
 expert_layer_period = 2
 
-use_cuda_jamba = False # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
+use_cuda_jamba = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
 
 # Mamba specific
-use_cuda_mamba = True # choose True if you can (mamba-ssm installed). else, fallbacks to mamba.py (https://github.com/alxndrTL/mamba.py)
+use_cuda_mamba = True
 
 # Transformer specific
 n_heads = 6
@@ -206,18 +208,13 @@ elif architecture == "Jamba":
                          num_experts=num_experts, num_experts_per_tok=num_experts_per_tok,
                          attn_layer_offset=attn_layer_offset, attn_layer_period=attn_layer_period,
                          expert_layer_offset=expert_layer_offset, expert_layer_period=expert_layer_period, use_cuda=use_cuda_jamba)
-elif architecture == "Jamba_hf":
-    config = JambaConfig_hf(vocab_size=65, hidden_size=d_model, intermediate_size=mlp_size, num_hidden_layers=n_layers,
-                            num_attention_heads=num_attn_heads, num_key_value_heads=num_key_value_heads, use_cache=False, n_ctx=100,
-                            num_experts_per_tok=num_experts_per_tok, num_experts=num_experts, expert_layer_offset=1, expert_layer_period=2,
-                            attn_layer_offset=attn_layer_offset, attn_layer_period=attn_layer_period, use_mamba_kernels=True)
 else:
     raise NotImplementedError
 
 # vocab_size being equal to 65 is a vestigial feature
 # it should actually be 60 (moves) + 1 (padding) = 61
 # (60 moves because the four center moves are never used as every game start with the same 4 pieces at center)
-# but the OthelloGame from the original OthelloGPT recorded the 64 moves, so OthelloGame from othello.py here also do that
+# but the OthelloGame from the original OthelloGPT recorded the 64 moves, so OthelloGame from othello.py here also does that
 # in short, 4 tokens are never used
 model = LM(config, vocab_size=65).to(device)
 optim = model.configure_optimizers(weight_decay, lr, (adam_b1, adam_b2), device_type) # AdamW optim with weight_decay except for 1D params (biases, norms)
@@ -238,6 +235,8 @@ if load_checkpoint:
         config_loaded = TransformerConfig(**config_json)
     elif architecture == "Mamba":
         config_loaded = MambaConfig(**config_json)
+    elif architecture == "Jamba":
+        config_loaded = JambaConfig(**config_json)
     else:
         raise NotImplementedError
 
@@ -341,13 +340,7 @@ print(f"Training is done. Took {(end_time-start_time)/60:.2f} minutes.")
 
 # saving : config + model checkpoint (model+optim+scaler)
 config_dict = asdict(config)
-
-if isinstance(config, TransformerConfig):
-    config_dict['architecture'] = "Transformer"
-elif isinstance(config, MambaConfig):
-    config_dict['architecture'] = "Mamba"
-else:
-    raise NotImplementedError
+config_dict['architecture'] = architecture
 
 json.dump(config_dict, open(os.path.join(save_dir, 'config.json'), 'w'))
 

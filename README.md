@@ -8,6 +8,7 @@ This repo provides the code to implement the famous ["OthelloGPT" experiment](ht
 <u>The repo features</u> :
 - a training script `train.py`, which trains a model that predicts legal moves in Othello.
 - the model trained can then be used to train a probe on top of it, with `create_data_probing.py` and `train_probe.py`.
+- the [Jamba](https://www.ai21.com/blog/announcing-jamba) architecture, which interleaves Mamba and attention layers
 - the Transformer backend can be pure PyTorch or can use FlashAttention-2 (torch compile compatible). The Mamba backend can either be [mamba.py](https://github.com/alxndrTL/mamba.py) or the [official CUDA implementation](https://github.com/state-spaces/mamba).
 
 It is a complete reimplementation of the [original repo](https://github.com/likenneth/othello_world).
@@ -61,7 +62,7 @@ Then, download the data, which consists of 23M of Othello games (converted from 
 
 ```bash
 wget -O data.tar.xz https://huggingface.co/datasets/alexandretl/othello/resolve/main/data.tar.xz?download=true
-tar -xf data.tar.xz # (1-2 minutes)
+tar -xf data.tar.xz # (1-2 minutes, 240 files)
 ```
 
 With this, you will have a `data` folder containing both a `train` and a `val` folder.
@@ -97,7 +98,7 @@ I trained 4 models : a 9M Mamba and a 11M Transformer, as well as a 17M Mamba an
 First things first, here are the losses for each of these models :
 
 <p align="center">
-    <img src="assets/val_loss.png" alt="diagram" width="75%"/>
+    <img src="assets/val_loss_comp.png" alt="diagram" width="100%"/>
 </p>
 
 As you can see, the Mamba models are faster to train (data-wise) than the Transformers (about ~20% faster).

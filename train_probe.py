@@ -5,7 +5,8 @@ The script also saves the probe (in load_dir/probe.pth), and records the accurac
 You can modify some parameters at the top of the script.
 If you didn't change any directories and left as default in train.py and create_data_probing.py, you don't need to modify dir_activations and dir_boards.
 
-You can set the load_dir and layer via command line.
+You can also set the load_dir and layer via command line when launching the script :
+python train_probe.py --load_dir=runs/celestial-frog-68 --layer=6
 """
 
 import os
@@ -17,22 +18,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from data import ProbingDataset
+
+from models.lm import LM
 from models.transformer.transformer import TransformerConfig
 from models.mamba.mamba import MambaConfig
-from models.lm import LM
+from models.mamba.jamba import JambaConfig
+
 from eval import eval_probe_accuracy
 
 # -------------------------------------------------------
 
-layer = 12
-load_dir = None # run directory
+layer = None
+load_dir = "" # run directory
 
 dir_activations = None # will default to load_dir/data_probing/layer_{layer} if None
 dir_boards = None # will default to load_dir/data_probing if None
 save_dir = None # will default to load_dir/probe_{layer}.pth if None
 
 batch_size = 256
-num_iters = 50000
+num_iters = 20000
 
 n_games = 500 # number of games to compute final acc
 
@@ -81,6 +85,8 @@ if architecture == "Transformer":
     config = TransformerConfig(**config_json)
 elif architecture == "Mamba":
     config = MambaConfig(**config_json)
+elif architecture == "Jamba":
+    config = JambaConfig(**config_json)
 else:
     raise NotImplementedError
 
